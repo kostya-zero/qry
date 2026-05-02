@@ -1,9 +1,11 @@
 package main
 
 import (
+	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
+	"unicode/utf8"
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
@@ -137,7 +139,13 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 				row = append(row, "NULL")
 			} else {
 				if b, ok := val.([]byte); ok {
-					row = append(row, string(b))
+					var finalData string
+					if !utf8.Valid(b) {
+						finalData = hex.EncodeToString(b)
+					} else {
+						finalData = string(b)
+					}
+					row = append(row, finalData)
 				} else {
 					row = append(row, fmt.Sprintf("%v", val))
 				}
