@@ -26,7 +26,9 @@ func NewSession(dialect Dialect, conn *sqlx.DB) *Session {
 }
 
 func (s *Session) handleInternalCommand(command string) {
-	switch command {
+	splitted := strings.SplitN(command, " ", 2)
+	cmd := splitted[0]
+	switch cmd {
 	case ".tables":
 		_, rows, err := s.ExecuteQuery(s.dialect.GetTablesQuery())
 		if err != nil {
@@ -36,12 +38,26 @@ func (s *Session) handleInternalCommand(command string) {
 		for _, v := range rows {
 			fmt.Println(v[0])
 		}
+	case ".schema":
+		if len(splitted) == 1 {
+			fmt.Println("Table name is required.")
+			return
+		}
+
+		tableName := strings.TrimSpace(splitted[1])
+		cols, rows, err := s.ExecuteQuery(s.dialect.GetTableSchema(tableName))
+		if err != nil {
+			fmt.Printf("database error: %v\n", err)
+			return
+		}
+		s.renderTable(cols, rows)
 	case ".exit":
 		fmt.Println("Goodbye!")
 		os.Exit(0)
 	case ".help":
 		commands := []CommandInfo{
 			{Usage: ".tables", Description: "display all tables in current database"},
+			{Usage: ".schema <table>", Description: "display schema of the table"},
 			{Usage: ".exit", Description: "close QRY"},
 			{Usage: ".help", Description: "shows this help message"},
 		}
