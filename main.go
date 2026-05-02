@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "modernc.org/sqlite"
 )
 
 var (
@@ -31,6 +32,8 @@ func mainloop() error {
 	switch provider {
 	case "pgx":
 		dialect = PostgresDialect{}
+	case "sqlite":
+		dialect = SQLiteDialect{}
 	default:
 		return errors.New("unknown provider")
 	}
@@ -69,7 +72,7 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&provider, "provider", "p", "postgres", "which provider to use (postgres, sqlite)")
+	rootCmd.Flags().StringVarP(&provider, "provider", "p", "sqlite", "which provider to use (postgres, sqlite)")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Printf("an error occured: %v", err)

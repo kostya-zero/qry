@@ -95,7 +95,6 @@ func (s *Session) handleSQLQuery(query string) {
 	}
 
 	if len(data) == 0 {
-		fmt.Println("No rows found.")
 		return
 	}
 
