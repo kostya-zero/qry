@@ -157,29 +157,18 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 }
 
 func (s *Session) renderTable(headers []string, data [][]string) {
-	headerStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("15")). // Розовый
-		Bold(true).
-		Align(lipgloss.Center)
-
-	cellStyle := lipgloss.NewStyle().
-		Padding(0, 1).Foreground(lipgloss.Color("251"))
-
-	borderStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("243")) // Серый
-
 	// Создаем таблицу
 	t := table.New().
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(borderStyle).
+		BorderStyle(TableBorderStyle).
 		Headers(headers...).
 		Rows(data...).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch row {
 			case table.HeaderRow:
-				return headerStyle
+				return TableHeaderStyle
 			default:
-				return cellStyle
+				return TableCellStyle
 			}
 		})
 
