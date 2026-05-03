@@ -115,6 +115,23 @@ func (s *Session) sanitizeQuery(query string) string {
 	return s.conn.Rebind(query)
 }
 
+func (s *Session) formatValue(val any) string {
+	if val == nil {
+		return "NULL"
+	}
+	if b, ok := val.([]byte); ok {
+		var finalData string
+		if !utf8.Valid(b) {
+			finalData = hex.EncodeToString(b)
+		} else {
+			finalData = string(b)
+		}
+		return finalData
+	} else {
+		return fmt.Sprintf("%v", val)
+	}
+}
+
 func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 	rows, err := s.conn.Queryx(query)
 	if err != nil {
@@ -130,28 +147,19 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 	var tableData [][]string
 	for rows.Next() {
 		rowMap := make(map[string]any)
-		rows.MapScan(rowMap)
+		if err := rows.MapScan(rowMap); err != nil {
+			return nil, nil, err
+		}
 
 		var row []string
 		for _, col := range cols {
-			val := rowMap[col]
-			if val == nil {
-				row = append(row, "NULL")
-			} else {
-				if b, ok := val.([]byte); ok {
-					var finalData string
-					if !utf8.Valid(b) {
-						finalData = hex.EncodeToString(b)
-					} else {
-						finalData = string(b)
-					}
-					row = append(row, finalData)
-				} else {
-					row = append(row, fmt.Sprintf("%v", val))
-				}
-			}
+			row = append(row, s.formatValue(rowMap[col]))
 		}
 		tableData = append(tableData, row)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, nil, err
 	}
 
 	return cols, tableData, nil
@@ -207,7 +215,6 @@ func (s *Session) RunREPL() {
 
 		if buffer == "" && strings.HasPrefix(cleanLine, ".") {
 			s.handleInternalCommand(cleanLine)
-			lineReader.AppendHistory(cleanLine)
 			continue
 		}
 
@@ -218,7 +225,7 @@ func (s *Session) RunREPL() {
 				PrintError(fmt.Sprintf("database error occurred: %v", err))
 			}
 			buffer = ""
-			lineReader.AppendHistory(cleanLine)
 		}
+		lineReader.AppendHistory(cleanLine)
 	}
 }
