@@ -7,5 +7,5 @@ import (
 )
 
 func PrintError(msg string) {
-	fmt.Printf("%s %s", lipgloss.NewStyle().Foreground(ColorRed).Render("error:"), msg)
+	fmt.Printf("%s %s\n", lipgloss.NewStyle().Foreground(ColorRed).Render("error:"), msg)
 }

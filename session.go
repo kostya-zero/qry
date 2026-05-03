@@ -87,18 +87,19 @@ func (s *Session) handleInternalCommand(command string) {
 	}
 }
 
-func (s *Session) handleSQLQuery(query string) {
+func (s *Session) handleSQLQuery(query string) error {
 	query = s.sanitizeQuery(query)
 	headers, data, err := s.ExecuteQuery(query)
 	if err != nil {
-		fmt.Printf("database error: %v\n", err)
+		return err
 	}
 
 	if len(data) == 0 {
-		return
+		return nil
 	}
 
 	s.renderTable(headers, data)
+	return nil
 }
 
 func (s *Session) sanitizeQuery(query string) string {
@@ -157,7 +158,6 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 }
 
 func (s *Session) renderTable(headers []string, data [][]string) {
-	// Создаем таблицу
 	t := table.New().
 		Border(lipgloss.NormalBorder()).
 		BorderStyle(TableBorderStyle).
@@ -194,6 +194,7 @@ func (s *Session) RunREPL() {
 		line, err := lineReader.Prompt(prompt)
 		if err != nil {
 			if err == liner.ErrPromptAborted {
+				buffer = ""
 				continue
 			}
 			break
@@ -212,7 +213,10 @@ func (s *Session) RunREPL() {
 
 		buffer += " " + cleanLine
 		if strings.HasSuffix(cleanLine, ";") {
-			s.handleSQLQuery(buffer)
+			err = s.handleSQLQuery(buffer)
+			if err != nil {
+				PrintError(fmt.Sprintf("database error occurred: %v", err))
+			}
 			buffer = ""
 			lineReader.AppendHistory(cleanLine)
 		}
