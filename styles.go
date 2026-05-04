@@ -8,6 +8,7 @@ var (
 	СolorBaseGray   = lipgloss.Color("242")
 	ColorBrightGray = lipgloss.Color("248")
 	ColorWhite      = lipgloss.Color("15")
+	ColorYellow     = lipgloss.Color("11")
 )
 
 // Table

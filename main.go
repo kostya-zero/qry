@@ -14,11 +14,26 @@ import (
 )
 
 var (
-	provider string
-	dsn      string
+	provider      string
+	dsn           string
+	showProviders bool
 )
 
+var supportedProviders = []string{"postgres", "sqlite"}
+
 func mainloop() error {
+	if showProviders {
+		for _, v := range supportedProviders {
+			fmt.Println(v)
+		}
+		return nil
+	}
+
+	if dsn == "" {
+		PrintWarn("no DSN provided, using ':memory:' instead.")
+		dsn = ":memory:"
+	}
+
 	if provider == "postgres" {
 		provider = "pgx"
 	}
@@ -52,17 +67,14 @@ func main() {
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 0 {
-				cmd.Help()
-				os.Exit(1)
+			if len(args) == 1 {
+				dsn = strings.TrimSpace(args[0])
 			}
 
 			if len(args) > 1 {
 				fmt.Println("Too many arguments.")
 				os.Exit(1)
 			}
-
-			dsn = strings.TrimSpace(args[0])
 
 			err := mainloop()
 			if err != nil {
@@ -72,7 +84,8 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&provider, "provider", "p", "sqlite", "which provider to use (postgres, sqlite)")
+	rootCmd.Flags().StringVarP(&provider, "provider", "p", "sqlite", "name of provider to use ")
+	rootCmd.Flags().BoolVar(&showProviders, "list-providers", false, "show all available providers")
 
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Printf("an error occured: %v", err)
