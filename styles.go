@@ -17,3 +17,5 @@ var (
 	TableCellStyle   = lipgloss.NewStyle().Padding(0, 1).Foreground(ColorBrightGray)
 	TableBorderStyle = lipgloss.NewStyle().Foreground(СolorBaseGray)
 )
+
+var PromptStyle = lipgloss.NewStyle().Bold(true).Foreground(ColorWhite)

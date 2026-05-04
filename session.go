@@ -10,7 +10,7 @@ import (
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
 	"github.com/jmoiron/sqlx"
-	"github.com/peterh/liner"
+	"github.com/smartystreets/cle"
 )
 
 type CommandInfo struct {
@@ -184,12 +184,9 @@ func (s *Session) renderTable(headers []string, data [][]string) {
 }
 
 func (s *Session) RunREPL() {
-	lineReader := liner.NewLiner()
-	defer lineReader.Close()
+	lineEditor := cle.NewCLE()
 
-	lineReader.SetCtrlCAborts(true)
-
-	fmt.Println("QRY v0.1.0")
+	fmt.Printf("QRY Shell v%s\n", QryVersion)
 	fmt.Println("Use '.help' for commands.")
 
 	var buffer string
@@ -199,16 +196,10 @@ func (s *Session) RunREPL() {
 			prompt = "..> "
 		}
 
-		line, err := lineReader.Prompt(prompt)
-		if err != nil {
-			if err == liner.ErrPromptAborted {
-				buffer = ""
-				continue
-			}
-			break
-		}
+		promptString := PromptStyle.Render(prompt)
+		line := lineEditor.ReadInput(promptString)
 
-		cleanLine := strings.TrimSpace(line)
+		cleanLine := strings.TrimSpace(string(line))
 		if cleanLine == "" {
 			continue
 		}
@@ -220,12 +211,11 @@ func (s *Session) RunREPL() {
 
 		buffer += " " + cleanLine
 		if strings.HasSuffix(cleanLine, ";") {
-			err = s.handleSQLQuery(buffer)
+			err := s.handleSQLQuery(buffer)
 			if err != nil {
 				PrintError(fmt.Sprintf("database error occurred: %v", err))
 			}
 			buffer = ""
 		}
-		lineReader.AppendHistory(cleanLine)
 	}
 }

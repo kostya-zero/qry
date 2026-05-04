@@ -34,6 +34,17 @@ func mainloop() error {
 		dsn = ":memory:"
 	}
 
+	var isSupportedProvider bool
+	for _, v := range supportedProviders {
+		if provider == v {
+			isSupportedProvider = true
+		}
+	}
+
+	if !isSupportedProvider {
+		return errors.New("provider is not supported")
+	}
+
 	if provider == "postgres" {
 		provider = "pgx"
 	}
@@ -63,7 +74,7 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:           "qry [DSN]",
 		Short:         "Query runner for PostgreSQL",
-		Long:          "QRY is a query runner that can send queries to PostgreSQL in more fancy way.",
+		Long:          "A CLI query runner with support for multiple databases with SQL-like syntax.",
 		SilenceErrors: true,
 		SilenceUsage:  true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -88,7 +99,7 @@ func main() {
 	rootCmd.Flags().BoolVar(&showProviders, "list-providers", false, "show all available providers")
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Printf("an error occured: %v", err)
+		PrintError(err.Error())
 		os.Exit(1)
 	}
 }
