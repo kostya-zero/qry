@@ -56,11 +56,14 @@ func (s *Session) handleInternalCommand(command string) {
 	case ".exit":
 		fmt.Println("Goodbye!")
 		os.Exit(0)
+	case ".version":
+		fmt.Printf("QRY Shell v%s\n", QryVersion)
 	case ".help":
 		commands := []CommandInfo{
 			{Usage: ".tables", Description: "display all tables in current database"},
 			{Usage: ".schema <table>", Description: "display schema of the table"},
 			{Usage: ".exit", Description: "close QRY"},
+			{Usage: ".version", Description: "display version of QRY"},
 			{Usage: ".help", Description: "shows this help message"},
 		}
 
@@ -77,7 +80,7 @@ func (s *Session) handleInternalCommand(command string) {
 			Rows(rows...).
 			StyleFunc(func(row, col int) lipgloss.Style {
 				if col == 0 {
-					return lipgloss.NewStyle().Bold(true)
+					return lipgloss.NewStyle().Bold(true).Foreground(ColorWhite)
 				}
 				return lipgloss.NewStyle()
 			})
