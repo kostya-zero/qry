@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -20,11 +21,12 @@ type CommandInfo struct {
 
 type Session struct {
 	dialect Dialect
+	limit   int
 	conn    *sqlx.DB
 }
 
 func NewSession(dialect Dialect, conn *sqlx.DB) *Session {
-	return &Session{dialect: dialect, conn: conn}
+	return &Session{dialect: dialect, limit: 100, conn: conn}
 }
 
 func (s *Session) handleInternalCommand(command string) {
@@ -40,6 +42,27 @@ func (s *Session) handleInternalCommand(command string) {
 		for _, v := range rows {
 			fmt.Println(v[0])
 		}
+	case ".limit":
+		if len(splitted) < 2 {
+			fmt.Printf("Current limit is %d.\n", s.limit)
+			return
+		}
+
+		newLimit, err := strconv.Atoi(splitted[1])
+		if err != nil {
+			PrintError("wrong value")
+			return
+		}
+		if newLimit <= 0 {
+			PrintError("value should be greter than zero")
+			return
+		}
+		if newLimit > 600 {
+			PrintWarn("new limit is very high, it could lead to memory leak")
+		}
+
+		s.limit = newLimit
+		fmt.Printf("New limit is set to %d.\n", newLimit)
 	case ".schema":
 		if len(splitted) == 1 {
 			fmt.Println("Table name is required.")
@@ -62,6 +85,7 @@ func (s *Session) handleInternalCommand(command string) {
 		commands := []CommandInfo{
 			{Usage: ".tables", Description: "display all tables in current database"},
 			{Usage: ".schema <table>", Description: "display schema of the table"},
+			{Usage: ".limit <value>", Description: "display or set limit"},
 			{Usage: ".exit", Description: "close QRY"},
 			{Usage: ".version", Description: "display version of QRY"},
 			{Usage: ".help", Description: "shows this help message"},
@@ -112,7 +136,7 @@ func (s *Session) sanitizeQuery(query string) string {
 	// Add LIMIT to not overflow the memory
 	upperQuery := strings.ToUpper(query)
 	if strings.HasPrefix(upperQuery, "SELECT") && !strings.Contains(upperQuery, "LIMIT") {
-		query = query + " LIMIT 100"
+		query = fmt.Sprintf("%s LIMIT %d", query, s.limit)
 	}
 
 	return s.conn.Rebind(query)
