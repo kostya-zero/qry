@@ -50,11 +50,11 @@ jobs:
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: 0
         run: |
-          go build -ldflags="-s -w" -o route-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }} main.go
+          go build -ldflags="-s -w" -o qry-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }} main.go
 
       - name: Upload binary to Release
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: route-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
+          files: qry-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
           token: ${{ secrets.GITHUB_TOKEN }}
