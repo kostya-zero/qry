@@ -50,7 +50,7 @@ jobs:
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: 0
         run: |
-          go build -ldflags="-s -w" -o qry-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }} main.go
+          go build -ldflags="-s -w" -o qry-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }} .
 
       - name: Upload binary to Release
         uses: softprops/action-gh-release@v3
