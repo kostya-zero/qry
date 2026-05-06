@@ -15,11 +15,6 @@ import (
 	"github.com/smartystreets/cle"
 )
 
-type CommandInfo struct {
-	Usage       string
-	Description string
-}
-
 type Session struct {
 	dialect         Dialect
 	limit           int
@@ -84,37 +79,30 @@ func (s *Session) handleInternalCommand(command string) {
 		s.PrintStats()
 	case ".exit":
 		s.PrintStats()
-		fmt.Println(lipgloss.NewStyle().Bold(true).Foreground(ColorWhite).Render("Goodbye!"))
+		fmt.Println(lipgloss.NewStyle().Foreground(ColorPrimary).Render("Goodbye!"))
 		os.Exit(0)
 	case ".version":
-		fmt.Printf("QRY Shell v%s\n", QryVersion)
+		fmt.Println(WelcomeStyle.Render(fmt.Sprintf("QRY Shell v%s", QryVersion)))
 	case ".help":
-		commands := []CommandInfo{
-			{Usage: ".tables", Description: "display all tables in current database"},
-			{Usage: ".schema <table>", Description: "display schema of the table"},
-			{Usage: ".limit <value>", Description: "display or set limit"},
-			{Usage: ".version", Description: "display version of QRY"},
-			{Usage: ".stats", Description: "Display stats for current session"},
-			{Usage: ".help", Description: "shows this help message"},
-			{Usage: ".exit", Description: "close QRY"},
-		}
-
-		var rows [][]string
-		for _, c := range commands {
-			row := []string{}
-			row = append(row, c.Usage)
-			row = append(row, c.Description)
-			rows = append(rows, row)
+		rows := [][]string{
+			{".tables", "display all tables in current database"},
+			{".schema <table>", "display schema of the table"},
+			{".limit <value>", "display or set limit"},
+			{".version", "display version of QRY"},
+			{".stats", "display stats for current session"},
+			{".help", "shows this help message"},
+			{".exit", "close QRY"},
 		}
 
 		t := table.New().
-			Border(lipgloss.HiddenBorder()).
+			Border(lipgloss.RoundedBorder()).
+			BorderStyle(TableBorderStyle).
 			Rows(rows...).
 			StyleFunc(func(row, col int) lipgloss.Style {
 				if col == 0 {
-					return lipgloss.NewStyle().Bold(true).Foreground(ColorWhite)
+					return InternalCmdStyle.Padding(0, 1)
 				}
-				return lipgloss.NewStyle()
+				return DescStyle.Padding(0, 1)
 			})
 		fmt.Println(t.Render())
 	default:
@@ -130,13 +118,14 @@ func (s *Session) PrintStats() {
 	}
 
 	t := table.New().
-		Border(lipgloss.HiddenBorder()).
+		Border(lipgloss.RoundedBorder()).
+		BorderStyle(TableBorderStyle).
 		Rows(rows...).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			if col == 0 {
-				return lipgloss.NewStyle().Bold(true).Foreground(ColorWhite)
+				return lipgloss.NewStyle().Bold(true).Foreground(ColorPrimary).Padding(0, 1)
 			}
-			return lipgloss.NewStyle()
+			return TableCellStyle
 		})
 
 	fmt.Println(t.Render())
@@ -222,7 +211,7 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 
 func (s *Session) renderTable(headers []string, data [][]string) {
 	t := table.New().
-		Border(lipgloss.NormalBorder()).
+		Border(lipgloss.RoundedBorder()).
 		BorderStyle(TableBorderStyle).
 		Headers(headers...).
 		Rows(data...).
@@ -241,8 +230,9 @@ func (s *Session) renderTable(headers []string, data [][]string) {
 func (s *Session) RunREPL() {
 	lineEditor := cle.NewCLE()
 
-	fmt.Printf("QRY Shell v%s\n", QryVersion)
-	fmt.Println("Use '.help' for commands.")
+	fmt.Println(WelcomeStyle.Render(fmt.Sprintf("QRY Shell v%s", QryVersion)))
+	fmt.Println(SubtextStyle.Render("Use '.help' for commands."))
+	fmt.Println()
 
 	var buffer string
 	for {
