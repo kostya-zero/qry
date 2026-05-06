@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 
 	"charm.land/lipgloss/v2"
@@ -20,13 +21,16 @@ type CommandInfo struct {
 }
 
 type Session struct {
-	dialect Dialect
-	limit   int
-	conn    *sqlx.DB
+	dialect         Dialect
+	limit           int
+	conn            *sqlx.DB
+	successCount    int
+	allQueriesCount int
+	startTime       time.Time
 }
 
 func NewSession(dialect Dialect, conn *sqlx.DB) *Session {
-	return &Session{dialect: dialect, limit: 100, conn: conn}
+	return &Session{dialect: dialect, limit: 100, conn: conn, successCount: 0, startTime: time.Now()}
 }
 
 func (s *Session) handleInternalCommand(command string) {
@@ -76,8 +80,11 @@ func (s *Session) handleInternalCommand(command string) {
 			return
 		}
 		s.renderTable(cols, rows)
+	case ".stats":
+		s.PrintStats()
 	case ".exit":
-		fmt.Println("Goodbye!")
+		s.PrintStats()
+		fmt.Println(lipgloss.NewStyle().Bold(true).Foreground(ColorWhite).Render("Goodbye!"))
 		os.Exit(0)
 	case ".version":
 		fmt.Printf("QRY Shell v%s\n", QryVersion)
@@ -87,6 +94,7 @@ func (s *Session) handleInternalCommand(command string) {
 			{Usage: ".schema <table>", Description: "display schema of the table"},
 			{Usage: ".limit <value>", Description: "display or set limit"},
 			{Usage: ".version", Description: "display version of QRY"},
+			{Usage: ".stats", Description: "Display stats for current session"},
 			{Usage: ".help", Description: "shows this help message"},
 			{Usage: ".exit", Description: "close QRY"},
 		}
@@ -112,6 +120,26 @@ func (s *Session) handleInternalCommand(command string) {
 	default:
 		fmt.Printf("Unknown internal command: %s\n", command)
 	}
+}
+
+func (s *Session) PrintStats() {
+	rows := [][]string{
+		{"Session Time", time.Since(s.startTime).Round(time.Second).String()},
+		{"Queries Stats", fmt.Sprintf("%d success, %d error", s.successCount, s.allQueriesCount-s.successCount)},
+		{"Provider", provider},
+	}
+
+	t := table.New().
+		Border(lipgloss.HiddenBorder()).
+		Rows(rows...).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if col == 0 {
+				return lipgloss.NewStyle().Bold(true).Foreground(ColorWhite)
+			}
+			return lipgloss.NewStyle()
+		})
+
+	fmt.Println(t.Render())
 }
 
 func (s *Session) handleSQLQuery(query string) error {
@@ -238,9 +266,12 @@ func (s *Session) RunREPL() {
 
 		buffer += " " + cleanLine
 		if strings.HasSuffix(cleanLine, ";") {
+			s.allQueriesCount += 1
 			err := s.handleSQLQuery(buffer)
 			if err != nil {
 				PrintError(fmt.Sprintf("database error occurred: %v", err))
+			} else {
+				s.successCount += 1
 			}
 			buffer = ""
 		}
