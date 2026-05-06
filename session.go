@@ -86,9 +86,9 @@ func (s *Session) handleInternalCommand(command string) {
 			{Usage: ".tables", Description: "display all tables in current database"},
 			{Usage: ".schema <table>", Description: "display schema of the table"},
 			{Usage: ".limit <value>", Description: "display or set limit"},
-			{Usage: ".exit", Description: "close QRY"},
 			{Usage: ".version", Description: "display version of QRY"},
 			{Usage: ".help", Description: "shows this help message"},
+			{Usage: ".exit", Description: "close QRY"},
 		}
 
 		var rows [][]string
