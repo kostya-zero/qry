@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -11,8 +11,8 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/chzyer/readline"
 	"github.com/jmoiron/sqlx"
-	"github.com/smartystreets/cle"
 )
 
 type Session struct {
@@ -28,7 +28,7 @@ func NewSession(dialect Dialect, conn *sqlx.DB) *Session {
 	return &Session{dialect: dialect, limit: 100, conn: conn, successCount: 0, startTime: time.Now()}
 }
 
-func (s *Session) handleInternalCommand(command string) {
+func (s *Session) handleInternalCommand(command string) error {
 	splitted := strings.SplitN(command, " ", 2)
 	cmd := splitted[0]
 	switch cmd {
@@ -36,7 +36,7 @@ func (s *Session) handleInternalCommand(command string) {
 		_, rows, err := s.ExecuteQuery(s.dialect.GetTablesQuery())
 		if err != nil {
 			fmt.Printf("database error: %v\n", err)
-			return
+			return nil
 		}
 		for _, v := range rows {
 			fmt.Println(v[0])
@@ -44,17 +44,17 @@ func (s *Session) handleInternalCommand(command string) {
 	case ".limit":
 		if len(splitted) < 2 {
 			fmt.Printf("Current limit is %d.\n", s.limit)
-			return
+			return nil
 		}
 
 		newLimit, err := strconv.Atoi(splitted[1])
 		if err != nil {
 			PrintError("wrong value")
-			return
+			return nil
 		}
 		if newLimit <= 0 {
 			PrintError("value should be greter than zero")
-			return
+			return nil
 		}
 		if newLimit > 600 {
 			PrintWarn("new limit is very high, it could lead to memory leak")
@@ -65,14 +65,14 @@ func (s *Session) handleInternalCommand(command string) {
 	case ".schema":
 		if len(splitted) == 1 {
 			fmt.Println("Table name is required.")
-			return
+			return nil
 		}
 
 		tableName := strings.TrimSpace(splitted[1])
 		cols, rows, err := s.ExecuteQuery(s.dialect.GetTableSchema(tableName))
 		if err != nil {
 			fmt.Printf("database error: %v\n", err)
-			return
+			return nil
 		}
 		s.renderTable(cols, rows)
 	case ".stats":
@@ -80,7 +80,7 @@ func (s *Session) handleInternalCommand(command string) {
 	case ".exit":
 		s.PrintStats()
 		fmt.Println(lipgloss.NewStyle().Foreground(ColorPrimary).Render("Goodbye!"))
-		os.Exit(0)
+		return ErrExit
 	case ".version":
 		fmt.Println(WelcomeStyle.Render(fmt.Sprintf("QRY Shell v%s", QryVersion)))
 	case ".help":
@@ -108,6 +108,8 @@ func (s *Session) handleInternalCommand(command string) {
 	default:
 		fmt.Printf("Unknown internal command: %s\n", command)
 	}
+
+	return nil
 }
 
 func (s *Session) PrintStats() {
@@ -189,8 +191,8 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 	}
 
 	var tableData [][]string
+	rowMap := make(map[string]any)
 	for rows.Next() {
-		rowMap := make(map[string]any)
 		if err := rows.MapScan(rowMap); err != nil {
 			return nil, nil, err
 		}
@@ -227,8 +229,17 @@ func (s *Session) renderTable(headers []string, data [][]string) {
 	fmt.Println(t.Render())
 }
 
-func (s *Session) RunREPL() {
-	lineEditor := cle.NewCLE()
+func (s *Session) RunREPL() error {
+	config := &readline.Config{
+		Prompt:          "qry>",
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+	}
+	rl, err := readline.NewEx(config)
+	if err != nil {
+		return ErrReadLineFail
+	}
+	defer rl.Close()
 
 	fmt.Println(WelcomeStyle.Render(fmt.Sprintf("QRY Shell v%s", QryVersion)))
 	fmt.Println(SubtextStyle.Render("Use '.help' for commands."))
@@ -241,8 +252,18 @@ func (s *Session) RunREPL() {
 			prompt = "..> "
 		}
 
-		promptString := PromptStyle.Render(prompt)
-		line := lineEditor.ReadInput(promptString)
+		rl.SetPrompt(prompt)
+		line, err := rl.Readline()
+		if err != nil {
+			if err == readline.ErrInterrupt {
+				if len(line) == 0 {
+					buffer = ""
+					continue
+				}
+				continue
+			}
+			continue
+		}
 
 		cleanLine := strings.TrimSpace(string(line))
 		if cleanLine == "" {
@@ -250,7 +271,12 @@ func (s *Session) RunREPL() {
 		}
 
 		if buffer == "" && strings.HasPrefix(cleanLine, ".") {
-			s.handleInternalCommand(cleanLine)
+			err := s.handleInternalCommand(cleanLine)
+			if err != nil {
+				if errors.Is(err, ErrExit) {
+					return nil
+				}
+			}
 			continue
 		}
 

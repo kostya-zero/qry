@@ -53,6 +53,7 @@ func mainloop() error {
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 
 	var dialect Dialect
 	switch provider {
