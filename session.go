@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -17,7 +16,6 @@ import (
 
 type Session struct {
 	dialect         Dialect
-	limit           int
 	conn            *sqlx.DB
 	successCount    int
 	allQueriesCount int
@@ -25,7 +23,7 @@ type Session struct {
 }
 
 func NewSession(dialect Dialect, conn *sqlx.DB) *Session {
-	return &Session{dialect: dialect, limit: 100, conn: conn, successCount: 0, startTime: time.Now()}
+	return &Session{dialect: dialect, conn: conn, successCount: 0, startTime: time.Now()}
 }
 
 func (s *Session) handleInternalCommand(command string) error {
@@ -41,27 +39,13 @@ func (s *Session) handleInternalCommand(command string) error {
 		for _, v := range rows {
 			fmt.Println(v[0])
 		}
-	case ".limit":
-		if len(splitted) < 2 {
-			fmt.Printf("Current limit is %d.\n", s.limit)
-			return nil
-		}
-
-		newLimit, err := strconv.Atoi(splitted[1])
+	case ".db":
+		cols, rows, err := s.ExecuteQuery(s.dialect.GetDatabasesQuery())
 		if err != nil {
-			PrintError("wrong value")
+			fmt.Printf("database error: %v\n", err)
 			return nil
 		}
-		if newLimit <= 0 {
-			PrintError("value should be greter than zero")
-			return nil
-		}
-		if newLimit > 600 {
-			PrintWarn("new limit is very high, it could lead to memory leak")
-		}
-
-		s.limit = newLimit
-		fmt.Printf("New limit is set to %d.\n", newLimit)
+		s.renderTable(cols, rows)
 	case ".schema":
 		if len(splitted) == 1 {
 			fmt.Println("Table name is required.")
@@ -90,6 +74,7 @@ func (s *Session) handleInternalCommand(command string) error {
 			{".limit <value>", "display or set limit"},
 			{".version", "display version of QRY"},
 			{".stats", "display stats for current session"},
+			{".db", "print information about databases"},
 			{".help", "shows this help message"},
 			{".exit", "close QRY"},
 		}
@@ -151,12 +136,6 @@ func (s *Session) handleSQLQuery(query string) error {
 func (s *Session) sanitizeQuery(query string) string {
 	query = strings.TrimSpace(query)
 	query = strings.TrimSuffix(query, ";")
-
-	// Add LIMIT to not overflow the memory
-	upperQuery := strings.ToUpper(query)
-	if strings.HasPrefix(upperQuery, "SELECT") && !strings.Contains(upperQuery, "LIMIT") {
-		query = fmt.Sprintf("%s LIMIT %d", query, s.limit)
-	}
 
 	return s.conn.Rebind(query)
 }
