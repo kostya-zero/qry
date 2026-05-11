@@ -14,16 +14,16 @@ import (
 )
 
 var (
-	provider      string
-	dsn           string
-	showProviders bool
+	driver      string
+	dsn         string
+	showDrivers bool
 )
 
-var supportedProviders = []string{"postgres", "sqlite"}
+var supportedDrivers = []string{"postgres", "sqlite"}
 
 func mainloop() error {
-	if showProviders {
-		for _, v := range supportedProviders {
+	if showDrivers {
+		for _, v := range supportedDrivers {
 			fmt.Println(v)
 		}
 		return nil
@@ -39,35 +39,35 @@ func mainloop() error {
 		dsn = ":memory:"
 	}
 
-	var isSupportedProvider bool
-	for _, v := range supportedProviders {
-		if provider == v {
-			isSupportedProvider = true
+	var isSupportedDriver bool
+	for _, v := range supportedDrivers {
+		if driver == v {
+			isSupportedDriver = true
 		}
 	}
 
-	if !isSupportedProvider {
-		return errors.New("provider is not supported")
+	if !isSupportedDriver {
+		return errors.New("driver is not supported")
 	}
 
-	if provider == "postgres" {
-		provider = "pgx"
+	if driver == "postgres" {
+		driver = "pgx"
 	}
 
-	conn, err := sqlx.Connect(provider, dsn)
+	conn, err := sqlx.Connect(driver, dsn)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
 	var dialect Dialect
-	switch provider {
+	switch driver {
 	case "pgx":
 		dialect = PostgresDialect{}
 	case "sqlite":
 		dialect = SQLiteDialect{}
 	default:
-		return errors.New("unknown provider")
+		return errors.New("unknown driver")
 	}
 
 	session := NewSession(dialect, conn)
@@ -101,8 +101,8 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&provider, "provider", "p", "sqlite", "name of provider to use ")
-	rootCmd.Flags().BoolVar(&showProviders, "list-providers", false, "show all available providers")
+	rootCmd.Flags().StringVarP(&driver, "driver", "d", "sqlite", "name of driver to use ")
+	rootCmd.Flags().BoolVar(&showDrivers, "list-drivers", false, "show all available drivers")
 
 	if err := rootCmd.Execute(); err != nil {
 		PrintError(err.Error())
