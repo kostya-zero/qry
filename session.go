@@ -33,7 +33,7 @@ func (s *Session) handleInternalCommand(command string) error {
 	case ".tables":
 		_, rows, err := s.ExecuteQuery(s.dialect.GetTablesQuery())
 		if err != nil {
-			fmt.Printf("database error: %v\n", err)
+			PrintError("database error: " + err.Error())
 			return nil
 		}
 		for _, v := range rows {
@@ -42,20 +42,20 @@ func (s *Session) handleInternalCommand(command string) error {
 	case ".db":
 		cols, rows, err := s.ExecuteQuery(s.dialect.GetDatabasesQuery())
 		if err != nil {
-			fmt.Printf("database error: %v\n", err)
+			PrintError("database error: " + err.Error())
 			return nil
 		}
 		s.renderTable(cols, rows)
 	case ".schema":
 		if len(splitted) == 1 {
-			fmt.Println("Table name is required.")
+			PrintError("Table name is required.")
 			return nil
 		}
 
 		tableName := strings.TrimSpace(splitted[1])
 		cols, rows, err := s.ExecuteQuery(s.dialect.GetTableSchema(tableName))
 		if err != nil {
-			fmt.Printf("database error: %v\n", err)
+			PrintError("database error: " + err.Error())
 			return nil
 		}
 		s.renderTable(cols, rows)
@@ -91,7 +91,7 @@ func (s *Session) handleInternalCommand(command string) error {
 			})
 		fmt.Println(t.Render())
 	default:
-		fmt.Printf("Unknown internal command: %s\n", command)
+		PrintError("Unknown internal command: " + command)
 	}
 
 	return nil
@@ -170,15 +170,15 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 	}
 
 	var tableData [][]string
-	rowMap := make(map[string]any)
 	for rows.Next() {
-		if err := rows.MapScan(rowMap); err != nil {
+		values, err := rows.SliceScan()
+		if err != nil {
 			return nil, nil, err
 		}
 
 		var row []string
-		for _, col := range cols {
-			row = append(row, s.formatValue(rowMap[col]))
+		for _, val := range values {
+			row = append(row, s.formatValue(val))
 		}
 		tableData = append(tableData, row)
 	}
