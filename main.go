@@ -29,6 +29,11 @@ func mainloop() error {
 		return nil
 	}
 
+	envDsn, ok := os.LookupEnv("DATABASE_URL")
+	if ok && dsn == "" {
+		dsn = envDsn
+	}
+
 	if dsn == "" {
 		PrintWarn("no DSN provided, using ':memory:' instead.")
 		dsn = ":memory:"
