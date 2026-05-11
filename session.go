@@ -101,7 +101,7 @@ func (s *Session) PrintStats() {
 	rows := [][]string{
 		{"Session Time", time.Since(s.startTime).Round(time.Second).String()},
 		{"Queries Stats", fmt.Sprintf("%d success, %d error", s.successCount, s.allQueriesCount-s.successCount)},
-		{"Provider", provider},
+		{"Provider", driver},
 	}
 
 	t := table.New().
