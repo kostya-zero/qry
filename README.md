@@ -27,13 +27,13 @@ Run the tool by providing a DSN:
 ./qry
 
 # PostgreSQL
-./qry -p postgres "postgres://user:password@localhost:5432/dbname"
+./qry -d postgres "postgres://user:password@localhost:5432/dbname"
 ```
 
 ### Options
 
-- `-p, --provider`: Specify the database provider (`postgres` or `sqlite`).
-- `--list-providers`: List all supported database providers.
+- `-d, --driver`: Specify the database driver (`postgres` or `sqlite`).
+- `--list-drivers`: List all supported database drivers.
 
 ## License
 
