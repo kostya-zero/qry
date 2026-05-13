@@ -120,6 +120,9 @@ func (s *Session) PrintStats() {
 
 func (s *Session) handleSQLQuery(query string) error {
 	query = s.sanitizeQuery(query)
+	if query == "" {
+		return nil
+	}
 	headers, data, err := s.ExecuteQuery(query)
 	if err != nil {
 		return err
