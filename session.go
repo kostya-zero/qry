@@ -71,7 +71,6 @@ func (s *Session) handleInternalCommand(command string) error {
 		rows := [][]string{
 			{".tables", "display all tables in current database"},
 			{".schema <table>", "display schema of the table"},
-			{".limit <value>", "display or set limit"},
 			{".version", "display version of QRY"},
 			{".stats", "display stats for current session"},
 			{".db", "print information about databases"},
