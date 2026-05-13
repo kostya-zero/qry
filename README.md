@@ -23,11 +23,21 @@ You can go to releases page and download binary for your OS and architecture.
 Run the tool by providing a DSN:
 
 ```bash
-# SQLite (default)
-./qry
+# Provide a SQLite DSN
+./qry file:my_database.db
 
-# PostgreSQL
-./qry -d postgres "postgres://user:password@localhost:5432/dbname"
+# Provide a PostgreSQL DSN
+./qry "postgres://user:password@localhost:5432/dbname"
+```
+
+The driver is automatically detected from the DSN. You can also specify it explicitly or use an environment variable:
+
+```bash
+# Using DATABASE_URL environment variable
+DATABASE_URL="postgres://user:password@localhost:5432/dbname" ./qry
+
+# Specifying driver explicitly
+./qry -d postgres "user=myuser password=mypass dbname=mydb"
 ```
 
 ### Options
