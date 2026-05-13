@@ -110,7 +110,7 @@ func (s *Session) PrintStats() {
 		Rows(rows...).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			if col == 0 {
-				return lipgloss.NewStyle().Bold(true).Foreground(ColorPrimary).Padding(0, 1)
+				return TableHeaderStyle.Align(lipgloss.Left)
 			}
 			return TableCellStyle
 		})

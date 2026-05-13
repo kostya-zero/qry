@@ -125,13 +125,13 @@ func main() {
 				return nil
 			}
 
-			if len(args) == 0 {
-				cmd.Help()
-				return nil
-			}
-
 			if len(args) == 1 {
 				dsn = strings.TrimSpace(args[0])
+			}
+
+			if dsn == "" && os.Getenv("DATABASE_URL") == "" {
+				cmd.Help()
+				return nil
 			}
 
 			err := mainloop()

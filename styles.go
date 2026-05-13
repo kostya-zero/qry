@@ -43,8 +43,8 @@ func setupColors() {
 		ColorBrightGray = lipgloss.NoColor{}
 		ColorWhite = lipgloss.NoColor{}
 
-		TableHeaderStyle = lipgloss.NewStyle()
-		TableCellStyle = lipgloss.NewStyle()
+		TableHeaderStyle = lipgloss.NewStyle().Align(lipgloss.Center).Padding(0, 1)
+		TableCellStyle = lipgloss.NewStyle().Padding(0, 1)
 		TableBorderStyle = lipgloss.NewStyle()
 
 		PromptStyle = lipgloss.NewStyle()
