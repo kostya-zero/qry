@@ -25,7 +25,7 @@ func detectDriver(dsn string) string {
 	dsn = strings.ToLower(dsn)
 
 	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") || (strings.Contains(dsn, "host=") && strings.Contains(dsn, "user=")) {
-		return "pgx"
+		return "postgres"
 	}
 
 	if strings.HasPrefix(dsn, "sqlite:") || strings.HasPrefix(dsn, "file:") || strings.Contains(dsn, ".db") || strings.Contains(dsn, ".sqlite3") {
