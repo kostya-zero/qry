@@ -92,13 +92,8 @@ func mainloop() error {
 	}
 	defer conn.Close()
 
-	var dialect Dialect
-	switch driver {
-	case "pgx":
-		dialect = PostgresDialect{}
-	case "sqlite":
-		dialect = SQLiteDialect{}
-	default:
+	dialect, ok := DialectRegistry[driver]
+	if !ok {
 		return errors.New("unknown driver")
 	}
 
@@ -112,7 +107,7 @@ func main() {
 	setupColors()
 	rootCmd := &cobra.Command{
 		Use:           "qry [DSN]",
-		Short:         "Query runner for PostgreSQL",
+		Short:         "Universal SQL CLI query runner",
 		Long:          "A CLI query runner with support for multiple databases with SQL-like syntax.",
 		SilenceErrors: true,
 		SilenceUsage:  true,

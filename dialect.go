@@ -2,6 +2,11 @@ package main
 
 import "fmt"
 
+var DialectRegistry = map[string]Dialect{
+	"pgx":    PostgresDialect{},
+	"sqlite": SQLiteDialect{},
+}
+
 type Dialect interface {
 	GetTablesQuery() string
 	GetTableSchema(table string) string

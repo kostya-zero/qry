@@ -15,11 +15,11 @@ import (
 )
 
 type Session struct {
-	dialect         Dialect
-	conn            *sqlx.DB
-	successCount    int
-	allQueriesCount int
-	startTime       time.Time
+	dialect      Dialect
+	conn         *sqlx.DB
+	successCount int
+	totalQueries int
+	startTime    time.Time
 }
 
 func NewSession(dialect Dialect, conn *sqlx.DB) *Session {
@@ -100,7 +100,7 @@ func (s *Session) handleInternalCommand(command string) error {
 func (s *Session) PrintStats() {
 	rows := [][]string{
 		{"Session Time", time.Since(s.startTime).Round(time.Second).String()},
-		{"Queries Stats", fmt.Sprintf("%d success, %d error", s.successCount, s.allQueriesCount-s.successCount)},
+		{"Queries Stats", fmt.Sprintf("%d success, %d error", s.successCount, s.totalQueries-s.successCount)},
 		{"Provider", driver},
 	}
 
@@ -264,7 +264,7 @@ func (s *Session) RunREPL() error {
 
 		buffer += " " + cleanLine
 		if strings.HasSuffix(cleanLine, ";") {
-			s.allQueriesCount += 1
+			s.totalQueries += 1
 			err := s.handleSQLQuery(buffer)
 			if err != nil {
 				PrintError(fmt.Sprintf("database error occurred: %v", err))
