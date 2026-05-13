@@ -21,22 +21,27 @@ var (
 
 var supportedDrivers = []string{"postgres", "sqlite"}
 
-func mainloop() error {
-	if showDrivers {
-		for _, v := range supportedDrivers {
-			fmt.Println(v)
+func detectDriver(dsn string) string {
+	dsn = strings.ToLower(dsn)
+
+	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") || (strings.Contains(dsn, "host=") && strings.Contains(dsn, "user=")) {
+		return "pgx"
+	}
+
+	if strings.HasPrefix(dsn, "sqlite:") || strings.HasPrefix(dsn, "file:") || strings.Contains(dsn, ".db") || strings.Contains(dsn, ".sqlite3") {
+		return "sqlite"
+	}
+
+	return ""
+}
+
+func getDriver() error {
+	if driver == "" {
+		detectedDriver := detectDriver(dsn)
+		if detectedDriver == "" {
+			return errors.New("cannot detect driver from DSN")
 		}
-		return nil
-	}
-
-	envDsn, ok := os.LookupEnv("DATABASE_URL")
-	if ok && dsn == "" {
-		dsn = envDsn
-	}
-
-	if dsn == "" {
-		PrintWarn("no DSN provided, using ':memory:' instead.")
-		dsn = ":memory:"
+		driver = detectedDriver
 	}
 
 	var isSupportedDriver bool
@@ -52,6 +57,33 @@ func mainloop() error {
 
 	if driver == "postgres" {
 		driver = "pgx"
+	}
+
+	return nil
+}
+
+func getDSN() error {
+	if dsn != "" {
+		return nil
+	}
+
+	envDsn, ok := os.LookupEnv("DATABASE_URL")
+	if ok && dsn == "" {
+		dsn = envDsn
+	}
+
+	return nil
+}
+
+func mainloop() error {
+	err := getDSN()
+	if err != nil {
+		return err
+	}
+
+	err = getDriver()
+	if err != nil {
+		return err
 	}
 
 	conn, err := sqlx.Connect(driver, dsn)
@@ -83,14 +115,22 @@ func main() {
 		Long:          "A CLI query runner with support for multiple databases with SQL-like syntax.",
 		SilenceErrors: true,
 		SilenceUsage:  true,
+		Args:          cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if len(args) == 1 {
-				dsn = strings.TrimSpace(args[0])
+			if showDrivers {
+				for _, v := range supportedDrivers {
+					fmt.Println(v)
+				}
+				return nil
 			}
 
-			if len(args) > 1 {
-				fmt.Println("Too many arguments.")
-				os.Exit(1)
+			if len(args) == 0 {
+				cmd.Help()
+				return nil
+			}
+
+			if len(args) == 1 {
+				dsn = strings.TrimSpace(args[0])
 			}
 
 			err := mainloop()
@@ -101,7 +141,7 @@ func main() {
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&driver, "driver", "d", "sqlite", "name of driver to use ")
+	rootCmd.Flags().StringVarP(&driver, "driver", "d", "", "name of driver to use ")
 	rootCmd.Flags().BoolVar(&showDrivers, "list-drivers", false, "show all available drivers")
 
 	if err := rootCmd.Execute(); err != nil {
