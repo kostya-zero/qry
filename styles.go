@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"charm.land/lipgloss/v2"
 )
 
@@ -30,3 +32,26 @@ var (
 	DescStyle        = lipgloss.NewStyle().Foreground(ColorBrightGray)
 	SuccessStyle     = lipgloss.NewStyle().Foreground(ColorGreen)
 )
+
+func setupColors() {
+	if _, ok := os.LookupEnv("NO_COLOR"); ok {
+		ColorPrimary = lipgloss.NoColor{}
+		ColorRed = lipgloss.NoColor{}
+		ColorGreen = lipgloss.NoColor{}
+		ColorYellow = lipgloss.NoColor{}
+		ColorBaseGray = lipgloss.NoColor{}
+		ColorBrightGray = lipgloss.NoColor{}
+		ColorWhite = lipgloss.NoColor{}
+
+		TableHeaderStyle = lipgloss.NewStyle()
+		TableCellStyle = lipgloss.NewStyle()
+		TableBorderStyle = lipgloss.NewStyle()
+
+		PromptStyle = lipgloss.NewStyle()
+		WelcomeStyle = lipgloss.NewStyle()
+		SubtextStyle = lipgloss.NewStyle()
+		InternalCmdStyle = lipgloss.NewStyle()
+		DescStyle = lipgloss.NewStyle()
+		SuccessStyle = lipgloss.NewStyle()
+	}
+}

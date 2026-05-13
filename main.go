@@ -109,6 +109,7 @@ func mainloop() error {
 }
 
 func main() {
+	setupColors()
 	rootCmd := &cobra.Command{
 		Use:           "qry [DSN]",
 		Short:         "Query runner for PostgreSQL",
