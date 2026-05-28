@@ -13,98 +13,89 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-var (
-	driver      string
-	dsn         string
-	showDrivers bool
-)
-
-var supportedDrivers = []string{"postgres", "sqlite"}
-
-func detectDriver(dsn string) string {
-	dsn = strings.ToLower(dsn)
-
-	if strings.HasPrefix(dsn, "postgres://") || strings.HasPrefix(dsn, "postgresql://") || (strings.Contains(dsn, "host=") && strings.Contains(dsn, "user=")) {
-		return "postgres"
-	}
-
-	if strings.HasPrefix(dsn, "sqlite:") || strings.HasPrefix(dsn, "file:") || strings.Contains(dsn, ".db") || strings.Contains(dsn, ".sqlite3") {
-		return "sqlite"
-	}
-
-	return ""
+type DriverConfig struct {
+	Name    string
+	SQLName string
+	Dialect string
 }
 
-func getDriver() error {
+var supportedDrivers = map[string]DriverConfig{
+	"postgres": {
+		Name:    "postgres",
+		SQLName: "pgx",
+		Dialect: "postgres",
+	},
+	"sqlite": {
+		Name:    "sqlite",
+		SQLName: "sqlite",
+		Dialect: "sqlite",
+	},
+}
+
+func detectDriver(dsn string) (DriverConfig, error) {
+	lower := strings.ToLower(dsn)
+
+	switch {
+	case strings.HasPrefix(lower, "postgres://"), strings.HasPrefix(lower, "postgresql://"):
+		return supportedDrivers["postgres"], nil
+	case strings.HasPrefix(lower, "sqlite:"), strings.HasPrefix(lower, "file:"):
+		return supportedDrivers["sqlite"], nil
+	case strings.HasSuffix(lower, ".db"), strings.HasSuffix(lower, ".sqlite"), strings.HasSuffix(lower, ".sqlite3"), lower == ":memory:":
+		return supportedDrivers["sqlite"], nil
+	default:
+		return DriverConfig{}, errors.New("cannot detect driver from DSN; specify it explicitly with --driver")
+	}
+}
+
+func resolveDriver(driver, dsn string) (DriverConfig, error) {
 	if driver == "" {
-		detectedDriver := detectDriver(dsn)
-		if detectedDriver == "" {
-			return errors.New("cannot detect driver from DSN")
-		}
-		driver = detectedDriver
+		return detectDriver(dsn)
 	}
 
-	var isSupportedDriver bool
-	for _, v := range supportedDrivers {
-		if driver == v {
-			isSupportedDriver = true
-		}
+	if _, ok := supportedDrivers[driver]; !ok {
+		return DriverConfig{}, errors.New("specified driver is not supported")
 	}
 
-	if !isSupportedDriver {
-		return errors.New("driver is not supported")
-	}
-
-	if driver == "postgres" {
-		driver = "pgx"
-	}
-
-	return nil
+	return supportedDrivers[driver], nil
 }
 
-func getDSN() error {
-	if dsn != "" {
-		return nil
+func run(driver, dsn string) error {
+	if dsn == "" {
+		envDsn, ok := os.LookupEnv("DATABASE_URL")
+		if ok && dsn == "" {
+			dsn = envDsn
+		}
 	}
 
-	envDsn, ok := os.LookupEnv("DATABASE_URL")
-	if ok && dsn == "" {
-		dsn = envDsn
-	}
-
-	return nil
-}
-
-func mainloop() error {
-	err := getDSN()
+	cfg, err := resolveDriver(driver, dsn)
 	if err != nil {
 		return err
 	}
 
-	err = getDriver()
-	if err != nil {
-		return err
-	}
-
-	conn, err := sqlx.Connect(driver, dsn)
+	conn, err := sqlx.Connect(cfg.SQLName, dsn)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
 
-	dialect, ok := DialectRegistry[driver]
+	dialect, ok := DialectRegistry[cfg.Dialect]
 	if !ok {
 		return errors.New("unknown driver")
 	}
 
 	session := NewSession(dialect, conn)
-	session.RunREPL()
-
-	return nil
+	return session.RunREPL()
 }
 
 func main() {
 	setupColors()
+
+	var (
+		driver      string
+		dsn         string
+		showDrivers bool
+	)
+
 	rootCmd := &cobra.Command{
 		Use:           "qry [DSN]",
 		Short:         "Universal SQL CLI query runner",
@@ -125,19 +116,14 @@ func main() {
 			}
 
 			if dsn == "" && os.Getenv("DATABASE_URL") == "" {
-				cmd.Help()
-				return nil
+				return cmd.Help()
 			}
 
-			err := mainloop()
-			if err != nil {
-				return err
-			}
-			return nil
+			return run(driver, dsn)
 		},
 	}
 
-	rootCmd.Flags().StringVarP(&driver, "driver", "d", "", "name of driver to use ")
+	rootCmd.Flags().StringVarP(&driver, "driver", "d", "", "name of driver to use")
 	rootCmd.Flags().BoolVar(&showDrivers, "list-drivers", false, "show all available drivers")
 
 	if err := rootCmd.Execute(); err != nil {
