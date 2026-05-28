@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -235,14 +236,18 @@ func (s *Session) RunREPL() error {
 		rl.SetPrompt(prompt)
 		line, err := rl.Readline()
 		if err != nil {
-			if err == readline.ErrInterrupt {
-				if len(line) == 0 {
-					buffer = ""
-					continue
-				}
+			if errors.Is(err, readline.ErrInterrupt) {
+				buffer = ""
 				continue
 			}
-			continue
+
+			if errors.Is(err, io.EOF) {
+				s.PrintStats()
+				fmt.Println(lipgloss.NewStyle().Foreground(ColorPrimary).Render("Goodbye!"))
+				return nil
+			}
+
+			return fmt.Errorf("readline error: %w", err)
 		}
 
 		cleanLine := strings.TrimSpace(string(line))
