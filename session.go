@@ -122,16 +122,34 @@ func (s *Session) handleSQLQuery(query string) error {
 	if query == "" {
 		return nil
 	}
-	headers, data, err := s.ExecuteQuery(query)
+
+	if s.isQueryReturningRows(query) {
+		headers, data, err := s.ExecuteQuery(query)
+		if err != nil {
+			return err
+		}
+
+		if len(data) == 0 {
+			fmt.Println(SubtextStyle.Render("No rows."))
+			return nil
+		}
+
+		s.renderTable(headers, data)
+		return nil
+	}
+
+	result, err := s.conn.Exec(query)
 	if err != nil {
 		return err
 	}
 
-	if len(data) == 0 {
-		return nil
+	rowsAffected, err := result.RowsAffected()
+	if err == nil {
+		fmt.Println(SubtextStyle.Render(fmt.Sprintf("OK, %d rows affected.", rowsAffected)))
+	} else {
+		fmt.Println(SubtextStyle.Render("OK."))
 	}
 
-	s.renderTable(headers, data)
 	return nil
 }
 
@@ -140,6 +158,17 @@ func (s *Session) sanitizeQuery(query string) string {
 	query = strings.TrimSuffix(query, ";")
 
 	return s.conn.Rebind(query)
+}
+
+func (s *Session) isQueryReturningRows(query string) bool {
+	query = strings.TrimSpace(strings.ToLower(query))
+
+	return strings.HasPrefix(query, "select") ||
+		strings.HasPrefix(query, "show") ||
+		strings.HasPrefix(query, "pragma") ||
+		strings.HasPrefix(query, "with") ||
+		strings.HasPrefix(query, "explain") ||
+		strings.HasPrefix(query, "describe")
 }
 
 func (s *Session) formatValue(val any) string {
