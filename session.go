@@ -34,30 +34,28 @@ func (s *Session) handleInternalCommand(command string) error {
 	case ".tables":
 		_, rows, err := s.ExecuteQuery(s.dialect.GetTablesQuery())
 		if err != nil {
-			PrintError("database error: " + err.Error())
-			return nil
+			return fmt.Errorf("databaser error: %w", err)
 		}
-		for _, v := range rows {
-			fmt.Println(v[0])
+		for _, row := range rows {
+			if len(row) > 0 {
+				fmt.Println(row[0])
+			}
 		}
 	case ".db":
 		cols, rows, err := s.ExecuteQuery(s.dialect.GetDatabasesQuery())
 		if err != nil {
-			PrintError("database error: " + err.Error())
-			return nil
+			return fmt.Errorf("databaser error: %w", err)
 		}
 		s.renderTable(cols, rows)
 	case ".schema":
 		if len(splitted) == 1 {
-			PrintError("Table name is required.")
-			return nil
+			return errors.New("table name is required")
 		}
 
 		tableName := strings.TrimSpace(splitted[1])
 		cols, rows, err := s.ExecuteQuery(s.dialect.GetTableSchema(tableName))
 		if err != nil {
-			PrintError("database error: " + err.Error())
-			return nil
+			return fmt.Errorf("databaser error: %w", err)
 		}
 		s.renderTable(cols, rows)
 	case ".stats":
@@ -91,7 +89,7 @@ func (s *Session) handleInternalCommand(command string) error {
 			})
 		fmt.Println(t.Render())
 	default:
-		PrintError("Unknown internal command: " + command)
+		return fmt.Errorf("unknown internal command: %s", command)
 	}
 
 	return nil
@@ -156,8 +154,7 @@ func (s *Session) handleSQLQuery(query string) error {
 func (s *Session) sanitizeQuery(query string) string {
 	query = strings.TrimSpace(query)
 	query = strings.TrimSuffix(query, ";")
-
-	return s.conn.Rebind(query)
+	return strings.TrimSpace(query)
 }
 
 func (s *Session) isQueryReturningRows(query string) bool {
@@ -290,6 +287,7 @@ func (s *Session) RunREPL() error {
 				if errors.Is(err, ErrExit) {
 					return nil
 				}
+				PrintError(err.Error())
 			}
 			continue
 		}
