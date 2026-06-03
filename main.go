@@ -62,7 +62,10 @@ func resolveDriver(driver, dsn string) (DriverConfig, error) {
 func run(driver, dsn string) error {
 	if dsn == "" {
 		envDsn, ok := os.LookupEnv("DATABASE_URL")
-		if ok && dsn == "" {
+		envDsn = strings.TrimSpace(envDsn)
+		if !ok || envDsn == "" {
+			return errors.New("DSN is required")
+		} else {
 			dsn = envDsn
 		}
 	}
@@ -106,7 +109,7 @@ func main() {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if showDrivers {
 				for _, v := range supportedDrivers {
-					fmt.Println(v)
+					fmt.Println(v.Name)
 				}
 				return nil
 			}
