@@ -8,18 +8,17 @@ import (
 
 // Colors
 var (
-	ColorPrimary    = lipgloss.Color("#5F87AF")
-	ColorRed        = lipgloss.Color("#FF5F5F")
-	ColorGreen      = lipgloss.Color("#5FAF5F")
-	ColorYellow     = lipgloss.Color("#FFAF00")
-	ColorBaseGray   = lipgloss.Color("#767676")
-	ColorBrightGray = lipgloss.Color("#D0D0D0")
-	ColorWhite      = lipgloss.Color("#FFFFFF")
+	ColorPrimary    = lipgloss.Color("12")
+	ColorRed        = lipgloss.Color("9")
+	ColorGreen      = lipgloss.Color("10")
+	ColorYellow     = lipgloss.Color("11")
+	ColorBaseGray   = lipgloss.Color("7")
+	ColorBrightGray = lipgloss.Color("15")
 )
 
 // Table
 var (
-	TableHeaderStyle = lipgloss.NewStyle().Bold(true).Align(lipgloss.Center).Foreground(ColorWhite).Padding(0, 1)
+	TableHeaderStyle = lipgloss.NewStyle().Bold(true).Align(lipgloss.Center).Foreground(ColorBrightGray).Padding(0, 1)
 	TableCellStyle   = lipgloss.NewStyle().Padding(0, 1).Foreground(ColorBrightGray)
 	TableBorderStyle = lipgloss.NewStyle().Foreground(ColorBaseGray)
 )
@@ -41,7 +40,6 @@ func setupColors() {
 		ColorYellow = lipgloss.NoColor{}
 		ColorBaseGray = lipgloss.NoColor{}
 		ColorBrightGray = lipgloss.NoColor{}
-		ColorWhite = lipgloss.NoColor{}
 
 		TableHeaderStyle = lipgloss.NewStyle().Align(lipgloss.Center).Padding(0, 1)
 		TableCellStyle = lipgloss.NewStyle().Padding(0, 1)
