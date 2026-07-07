@@ -13,10 +13,10 @@
 If you have Go toolchain installed you can use `go install`:
 
 ```bash
-go install github.com/kostya-zero/qry
+go install github.com/kostya-zero/qry@latest
 ```
 
-You can go to releases page and download binary for your OS and architecture.
+You can go to [https://github.com/kostya-zero/qry/releases](releases page) and download binary for your OS and architecture.
 
 ## Usage
 
