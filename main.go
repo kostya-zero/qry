@@ -103,9 +103,10 @@ func main() {
 	setupColors()
 
 	var (
-		driver      string
-		dsn         string
-		showDrivers bool
+		driver         string
+		dsn            string
+		showDrivers    bool
+		showConfigPath bool
 	)
 
 	rootCmd := &cobra.Command{
@@ -116,6 +117,16 @@ func main() {
 		SilenceUsage:  true,
 		Args:          cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if showConfigPath {
+				configPath, err := GetConfigPath()
+				if err != nil {
+					return fmt.Errorf("failed to get path to the configuration file: %s", err.Error())
+				}
+
+				fmt.Println(configPath)
+				return nil
+			}
+
 			if showDrivers {
 				for _, v := range supportedDrivers {
 					fmt.Println(v.Name)
@@ -137,6 +148,7 @@ func main() {
 
 	rootCmd.Flags().StringVarP(&driver, "driver", "d", "", "name of driver to use")
 	rootCmd.Flags().BoolVar(&showDrivers, "list-drivers", false, "show all available drivers")
+	rootCmd.Flags().BoolVar(&showConfigPath, "config-path", false, "print path to the configuration file")
 
 	if err := rootCmd.Execute(); err != nil {
 		PrintError(err.Error())

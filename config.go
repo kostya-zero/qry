@@ -16,13 +16,22 @@ type Config struct {
 	Borders string `koanf:"borders"`
 }
 
-func LoadConfig() (*Config, error) {
+func GetConfigPath() (string, error) {
 	userDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+
+	configPath := filepath.Join(userDir, "qry", "config.toml")
+	return configPath, nil
+}
+
+func LoadConfig() (*Config, error) {
+	configPath, err := GetConfigPath()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	configPath := filepath.Join(userDir, "qry", "config.toml")
 	if _, err = os.Stat(configPath); errors.Is(err, os.ErrNotExist) {
 		err = os.MkdirAll(filepath.Dir(configPath), 0o755)
 		if err != nil {
