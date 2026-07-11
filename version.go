@@ -1,3 +1,3 @@
 package main
 
-const QryVersion string = "0.3.0-dev"
+const QryVersion string = "0.3.0"
