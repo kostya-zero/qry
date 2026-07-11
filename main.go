@@ -70,12 +70,12 @@ func run(driver, dsn string) error {
 		}
 	}
 
-	cfg, err := resolveDriver(driver, dsn)
+	databaseDriver, err := resolveDriver(driver, dsn)
 	if err != nil {
 		return err
 	}
 
-	conn, err := sql.Open(cfg.SQLName, dsn)
+	conn, err := sql.Open(databaseDriver.SQLName, dsn)
 	if err != nil {
 		return err
 	}
@@ -85,12 +85,17 @@ func run(driver, dsn string) error {
 		return err
 	}
 
-	dialect, ok := DialectRegistry[cfg.Dialect]
+	dialect, ok := DialectRegistry[databaseDriver.Dialect]
 	if !ok {
 		return errors.New("unknown driver")
 	}
 
-	session := NewSession(dialect, conn)
+	cfg, err := LoadConfig()
+	if err != nil {
+		return err
+	}
+
+	session := NewSession(dialect, conn, cfg)
 	return session.RunREPL()
 }
 

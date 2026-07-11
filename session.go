@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -11,20 +12,43 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
-	"database/sql"
 	"github.com/ergochat/readline"
 )
 
 type Session struct {
 	dialect      Dialect
 	conn         *sql.DB
+	cfg          *Config
+	border       lipgloss.Border
 	successCount int
 	totalQueries int
 	startTime    time.Time
 }
 
-func NewSession(dialect Dialect, conn *sql.DB) *Session {
-	return &Session{dialect: dialect, conn: conn, successCount: 0, startTime: time.Now()}
+func NewSession(dialect Dialect, conn *sql.DB, cfg *Config) *Session {
+	var border lipgloss.Border
+	switch cfg.Borders {
+	case "none":
+		border = lipgloss.Border{}
+	case "rounded":
+		border = lipgloss.RoundedBorder()
+	case "normal":
+		border = lipgloss.NormalBorder()
+	case "ascii":
+		border = lipgloss.ASCIIBorder()
+	case "block":
+		border = lipgloss.BlockBorder()
+	case "double":
+		border = lipgloss.DoubleBorder()
+	case "hidden":
+		border = lipgloss.HiddenBorder()
+	case "thick":
+		border = lipgloss.ThickBorder()
+	default:
+		border = lipgloss.RoundedBorder()
+	}
+
+	return &Session{dialect: dialect, conn: conn, successCount: 0, startTime: time.Now(), cfg: cfg, border: border}
 }
 
 func (s *Session) handleInternalCommand(command string) error {
@@ -60,6 +84,22 @@ func (s *Session) handleInternalCommand(command string) error {
 		s.renderTable(cols, rows)
 	case ".stats":
 		s.PrintStats()
+	case ".config":
+		rows := [][]string{
+			{"borders", s.cfg.Borders},
+		}
+
+		t := table.New().
+			Border(s.border).
+			BorderStyle(TableBorderStyle).
+			Rows(rows...).
+			StyleFunc(func(row, col int) lipgloss.Style {
+				if col == 0 {
+					return InternalCmdStyle.Padding(0, 1)
+				}
+				return DescStyle.Padding(0, 1)
+			})
+		fmt.Println(t.Render())
 	case ".exit":
 		s.PrintStats()
 		fmt.Println(lipgloss.NewStyle().Foreground(ColorPrimary).Render("Goodbye!"))
@@ -73,12 +113,13 @@ func (s *Session) handleInternalCommand(command string) error {
 			{".version", "display version of QRY"},
 			{".stats", "display stats for current session"},
 			{".db", "print information about databases"},
+			{".config", "print current configuration"},
 			{".help", "shows this help message"},
 			{".exit", "close QRY"},
 		}
 
 		t := table.New().
-			Border(lipgloss.RoundedBorder()).
+			Border(s.border).
 			BorderStyle(TableBorderStyle).
 			Rows(rows...).
 			StyleFunc(func(row, col int) lipgloss.Style {
@@ -102,12 +143,12 @@ func (s *Session) PrintStats() {
 	}
 
 	t := table.New().
-		Border(lipgloss.RoundedBorder()).
+		Border(s.border).
 		BorderStyle(TableBorderStyle).
 		Rows(rows...).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			if col == 0 {
-				return TableHeaderStyle.Align(lipgloss.Left)
+				return InternalCmdStyle.Padding(0, 1)
 			}
 			return TableCellStyle
 		})
@@ -226,7 +267,7 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 
 func (s *Session) renderTable(headers []string, data [][]string) {
 	t := table.New().
-		Border(lipgloss.RoundedBorder()).
+		Border(s.border).
 		BorderStyle(TableBorderStyle).
 		Headers(headers...).
 		Rows(data...).

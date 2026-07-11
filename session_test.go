@@ -20,7 +20,7 @@ func TestExecuteQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	session := NewSession(SQLiteDialect{}, conn)
+	session := NewSession(SQLiteDialect{}, conn, &Config{})
 	columns, rows, err := session.ExecuteQuery("SELECT id, name FROM users")
 	if err != nil {
 		t.Fatal(err)
