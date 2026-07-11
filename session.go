@@ -11,7 +11,7 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
-	"github.com/chzyer/readline"
+	"github.com/ergochat/readline"
 	"github.com/jmoiron/sqlx"
 )
 
