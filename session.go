@@ -303,7 +303,7 @@ func (s *Session) RunREPL() error {
 	for {
 		prompt := "qry> "
 		if buffer != "" {
-			prompt = "..> "
+			prompt = "...> "
 		}
 
 		rl.SetPrompt(prompt)

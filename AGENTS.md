@@ -10,13 +10,11 @@ Driver can be auto-detected from DSN or explicitly set with `-d/--driver`.
 - `dialect.go`: DB-specific dialect abstraction and SQL snippets for PostgreSQL/SQLite metadata.
 - `styles.go`, `errors.go`, `terminal.go`, `version.go`: UI styling, error output, terminal behavior, version constants.
 
-## Development workflow (mise)
-- Install toolchain from `mise.toml`:
-  - `mise install`
+## Development workflow (just)
 - Run app:
-  - `mise run app`
+  - `just run`
 - Build binary:
-  - `mise run build`
+  - `just build`
 
 ## Agent notes
 - Keep changes minimal and focused.
