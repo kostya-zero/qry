@@ -11,19 +11,19 @@ import (
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"database/sql"
 	"github.com/ergochat/readline"
-	"github.com/jmoiron/sqlx"
 )
 
 type Session struct {
 	dialect      Dialect
-	conn         *sqlx.DB
+	conn         *sql.DB
 	successCount int
 	totalQueries int
 	startTime    time.Time
 }
 
-func NewSession(dialect Dialect, conn *sqlx.DB) *Session {
+func NewSession(dialect Dialect, conn *sql.DB) *Session {
 	return &Session{dialect: dialect, conn: conn, successCount: 0, startTime: time.Now()}
 }
 
@@ -186,7 +186,7 @@ func (s *Session) formatValue(val any) string {
 }
 
 func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
-	rows, err := s.conn.Queryx(query)
+	rows, err := s.conn.Query(query)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -199,7 +199,13 @@ func (s *Session) ExecuteQuery(query string) ([]string, [][]string, error) {
 
 	var tableData [][]string
 	for rows.Next() {
-		values, err := rows.SliceScan()
+		values := make([]any, len(cols))
+		pointers := make([]any, len(cols))
+		for i := range values {
+			pointers[i] = &values[i]
+		}
+
+		err := rows.Scan(pointers...)
 		if err != nil {
 			return nil, nil, err
 		}

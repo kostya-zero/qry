@@ -1,12 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -75,11 +75,15 @@ func run(driver, dsn string) error {
 		return err
 	}
 
-	conn, err := sqlx.Connect(cfg.SQLName, dsn)
+	conn, err := sql.Open(cfg.SQLName, dsn)
 	if err != nil {
 		return err
 	}
 	defer conn.Close()
+
+	if err := conn.Ping(); err != nil {
+		return err
+	}
 
 	dialect, ok := DialectRegistry[cfg.Dialect]
 	if !ok {

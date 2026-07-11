@@ -6,7 +6,6 @@ require (
 	charm.land/lipgloss/v2 v2.0.3
 	github.com/ergochat/readline v0.1.3
 	github.com/jackc/pgx/v5 v5.9.2
-	github.com/jmoiron/sqlx v1.4.0
 	github.com/spf13/cobra v1.10.2
 	modernc.org/sqlite v1.51.0
 )
