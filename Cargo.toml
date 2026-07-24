@@ -11,3 +11,12 @@ rusqlite = { version = "0.40.1", features = ["bundled"] }
 rustyline = "18.0.1"
 tabled = "0.21.0"
 thiserror = "2.0.19"
+
+[profile.release]
+panic = "abort"
+opt-level = 3
+codegen-units = 1
+incremental = false
+lto = "thin"
+debug = 0
+strip = true
