@@ -17,6 +17,7 @@ pub enum Command {
     Tables,
     Db,
     Schema,
+    Help,
     Driver,
     Exit,
 }
@@ -36,7 +37,6 @@ pub enum SessionError {
 impl FromStr for Command {
     type Err = String;
 
-    #[allow(clippy::match_str_case_mismatch)]
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_ascii_lowercase().as_str() {
             ".version" => Ok(Self::Version),
@@ -44,6 +44,7 @@ impl FromStr for Command {
             ".driver" => Ok(Self::Driver),
             ".tables" => Ok(Self::Tables),
             ".schema" => Ok(Self::Schema),
+            ".help" => Ok(Self::Help),
             ".exit" | ".quit" => Ok(Self::Exit),
             _ => Err(format!("unknown command: {s}")),
         }
@@ -66,8 +67,8 @@ where
         match cmd {
             Command::Version => println!("{}", env!("CARGO_PKG_VERSION")),
             Command::Exit => return Err(SessionError::Exit),
-            Command::Tables => println!("{}", D::get_tables_query()),
-            Command::Db => println!("{}", D::get_databases_query()),
+            Command::Tables => self.execute_query(D::get_tables_query()),
+            Command::Db => self.execute_query(D::get_databases_query()),
             Command::Driver => println!("{}", D::name()),
             Command::Schema => {
                 if splitted.len() < 2 {
@@ -83,7 +84,29 @@ where
                     ));
                 }
 
-                println!("{}", D::get_tables_schema(args));
+                self.execute_query(&D::get_tables_schema(args));
+            }
+            Command::Help => {
+                let columns = vec!["command".to_string(), "description".to_string()];
+
+                let rows = vec![
+                    vec![".help".to_string(), "prints help message".to_string()],
+                    vec![".version".to_string(), "prints version of qry".to_string()],
+                    vec![".driver".to_string(), "prints driver name".to_string()],
+                    vec![".exit, .quit".to_string(), "exit qry".to_string()],
+                    vec![".db".to_string(), "prints all databases".to_string()],
+                    vec![".tables".to_string(), "prints all tables".to_string()],
+                    vec![
+                        ".schema <table>".to_string(),
+                        "prints schema of specific table".to_string(),
+                    ],
+                ];
+
+                self.render_table(QueryOutput {
+                    columns,
+                    rows,
+                    affected_rows: 0,
+                });
             }
         }
 
@@ -99,14 +122,20 @@ where
         }
 
         let mut t = b.build();
-        t.with(Style::modern());
+        t.with(Style::rounded());
 
         println!("{t}");
     }
 
     pub fn execute_query(&self, query: &str) {
         match self.driver.execute_query(query) {
-            Ok(d) => self.render_table(d),
+            Ok(d) => {
+                if d.columns.is_empty() && d.rows.is_empty() {
+                    println!("OK, rows affected {}.", d.affected_rows);
+                } else {
+                    self.render_table(d);
+                }
+            }
             Err(e) => println!("database error: {e}"),
         }
     }
