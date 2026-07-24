@@ -4,3 +4,8 @@
 
 # Codegraph 
 /.codegraph
+
+
+# Added by cargo
+
+/target
