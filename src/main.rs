@@ -4,7 +4,7 @@ use clap::Parser;
 
 use crate::{
     cli::Cli,
-    drivers::{Drivers, sqlite::SqliteDriver},
+    drivers::{Drivers, postgres::PostgresDriver, sqlite::SqliteDriver},
     session::Session,
 };
 
@@ -16,10 +16,9 @@ fn detect_driver(dsn: &str) -> Option<Drivers> {
     let lower_string = dsn.to_ascii_lowercase();
     let lower = lower_string.as_str();
 
-    // FIXME: I will come back to postgres later, need to finish sqlite first to make an MVP
-    // if lower.starts_with("postgres://") || lower.starts_with("postgresql://") {
-    //     return Some(Drivers::Postgres);
-    // }
+    if lower.starts_with("postgres://") || lower.starts_with("postgresql://") {
+        return Some(Drivers::Postgres);
+    }
 
     if lower.starts_with("sqlite:") || lower.starts_with("file:") {
         return Some(Drivers::Sqlite);
@@ -51,6 +50,19 @@ fn main() {
     match driver_to_use {
         Drivers::Sqlite => {
             let driver = SqliteDriver::new(&args.database_url);
+            match driver {
+                Ok(d) => {
+                    let mut session = Session::new(d);
+                    session.run_repl().unwrap();
+                }
+                Err(e) => {
+                    println!("Failed to connect to the database: {e}");
+                    exit(1)
+                }
+            }
+        }
+        Drivers::Postgres => {
+            let driver = PostgresDriver::new(&args.database_url);
             match driver {
                 Ok(d) => {
                     let mut session = Session::new(d);

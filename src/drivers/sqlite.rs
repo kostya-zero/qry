@@ -60,7 +60,7 @@ impl Driver for SqliteDriver {
         "sqlite"
     }
 
-    fn execute_query(&self, query: &str) -> Result<QueryOutput> {
+    fn execute_query(&mut self, query: &str) -> Result<QueryOutput> {
         let mut statement = self.connection.prepare(query)?;
         let column_count = statement.column_count();
 

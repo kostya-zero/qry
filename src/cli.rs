@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{ArgAction, Parser};
 
 /// A command-line query runner.
 #[derive(Parser)]
@@ -17,4 +17,8 @@ pub struct Cli {
     /// but can be specified explicitly.
     #[arg(short, long)]
     pub driver: Option<String>,
+
+    /// Print a list of all supported drivers.
+    #[arg(short, long, action = ArgAction::SetTrue)]
+    pub list_drivers: bool,
 }

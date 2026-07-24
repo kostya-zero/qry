@@ -59,7 +59,7 @@ where
         Self { driver }
     }
 
-    fn execute_internal_command(&self, command: &str) -> Result<(), SessionError> {
+    fn execute_internal_command(&mut self, command: &str) -> Result<(), SessionError> {
         let splitted: Vec<String> = command.splitn(2, " ").map(String::from).collect();
 
         let cmd = Command::from_str(&splitted[0])
@@ -127,7 +127,7 @@ where
         println!("{t}");
     }
 
-    pub fn execute_query(&self, query: &str) {
+    pub fn execute_query(&mut self, query: &str) {
         match self.driver.execute_query(query) {
             Ok(d) => {
                 if d.columns.is_empty() && d.rows.is_empty() {
