@@ -8,7 +8,7 @@ use thiserror::Error;
 use crate::drivers::{Driver, QueryOutput};
 
 pub struct Session<D> {
-    dialect: D,
+    driver: D,
 }
 
 #[derive(Debug)]
@@ -54,8 +54,8 @@ impl<D> Session<D>
 where
     D: Driver,
 {
-    pub fn new(dialect: D) -> Self {
-        Self { dialect }
+    pub fn new(driver: D) -> Self {
+        Self { driver }
     }
 
     fn execute_internal_command(&self, command: &str) -> Result<(), SessionError> {
@@ -105,7 +105,7 @@ where
     }
 
     pub fn execute_query(&self, query: &str) {
-        match self.dialect.execute_query(query) {
+        match self.driver.execute_query(query) {
             Ok(d) => self.render_table(d),
             Err(e) => println!("database error: {e}"),
         }
