@@ -11,7 +11,7 @@ use thiserror::Error;
 
 use crate::{
     drivers::{Driver, QueryOutput},
-    terminal::print_error,
+    terminal::{escape_control_chars, print_error},
 };
 
 pub struct Session<D> {
@@ -91,7 +91,8 @@ where
                     ));
                 }
 
-                self.execute_query(&D::get_tables_schema(args));
+                let result = self.driver.get_tables_schema(args);
+                self.display_query_result(result);
             }
             Command::Help => {
                 let columns = vec!["command".to_string(), "description".to_string()];
@@ -122,10 +123,10 @@ where
 
     pub fn render_table(&self, data: QueryOutput) {
         let mut b = Builder::new();
-        b.push_record(data.columns);
+        b.push_record(data.columns.into_iter().map(escape_control_chars));
 
         for row in data.rows {
-            b.push_record(row);
+            b.push_record(row.into_iter().map(escape_control_chars));
         }
 
         let mut t = b.build();
@@ -136,15 +137,20 @@ where
     }
 
     pub fn execute_query(&mut self, query: &str) {
-        match self.driver.execute_query(query) {
-            Ok(d) => {
-                if d.columns.is_empty() && d.rows.is_empty() {
-                    println!("OK, rows affected {}.", d.affected_rows);
+        let result = self.driver.execute_query(query);
+        self.display_query_result(result);
+    }
+
+    fn display_query_result(&self, result: Result<QueryOutput>) {
+        match result {
+            Ok(data) => {
+                if data.columns.is_empty() && data.rows.is_empty() {
+                    println!("OK, rows affected {}.", data.affected_rows);
                 } else {
-                    self.render_table(d);
+                    self.render_table(data);
                 }
             }
-            Err(e) => println!("database error: {e}"),
+            Err(error) => println!("database error: {error}"),
         }
     }
 

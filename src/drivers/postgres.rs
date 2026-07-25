@@ -35,10 +35,23 @@ impl Driver for PostgresDriver {
         ORDER BY pg_database_size(datname) DESC"
     }
 
-    fn get_tables_schema(table: &str) -> String {
-        format!(
-            "SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{table}'"
-        )
+    fn get_tables_schema(&mut self, table: &str) -> Result<QueryOutput> {
+        let rows = self.client.query(
+            "SELECT column_name, data_type \
+             FROM information_schema.columns \
+             WHERE table_schema = 'public' AND table_name = $1 \
+             ORDER BY ordinal_position",
+            &[&table],
+        )?;
+
+        Ok(QueryOutput {
+            columns: vec!["column_name".to_owned(), "data_type".to_owned()],
+            rows: rows
+                .into_iter()
+                .map(|row| vec![row.get(0), row.get(1)])
+                .collect(),
+            affected_rows: 0,
+        })
     }
 
     fn name() -> &'static str {

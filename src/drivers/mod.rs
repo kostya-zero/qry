@@ -31,7 +31,7 @@ pub struct QueryOutput {
 pub trait Driver {
     fn get_tables_query() -> &'static str;
     fn get_databases_query() -> &'static str;
-    fn get_tables_schema(table: &str) -> String;
+    fn get_tables_schema(&mut self, table: &str) -> Result<QueryOutput>;
     fn name() -> &'static str;
     fn execute_query(&mut self, query: &str) -> Result<QueryOutput>;
 }
