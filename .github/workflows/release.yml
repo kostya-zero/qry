@@ -16,28 +16,28 @@ jobs:
         include:
           - os: macos-latest
             target: x86_64-apple-darwin
-            bin: qry
+            bin: quro
           - os: macos-latest
             target: aarch64-apple-darwin
-            bin: qry
+            bin: quro
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            bin: qry
+            bin: quro
           - os: ubuntu-latest
             target: aarch64-unknown-linux-gnu
-            bin: qry
+            bin: quro
           - os: ubuntu-latest
             target: x86_64-unknown-linux-musl
-            bin: qry
+            bin: quro
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
-            bin: qry
+            bin: quro
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            bin: qry.exe
+            bin: quro.exe
           - os: windows-latest
             target: aarch64-pc-windows-msvc
-            bin: qry.exe
+            bin: quro.exe
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
@@ -73,14 +73,14 @@ jobs:
         run: |
           mkdir -p dist
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            cp "target/${{ matrix.target }}/release/${{ matrix.bin }}" "dist/qry-${{ matrix.target }}.exe"
+            cp "target/${{ matrix.target }}/release/${{ matrix.bin }}" "dist/quro-${{ matrix.target }}.exe"
           else
-            cp "target/${{ matrix.target }}/release/${{ matrix.bin }}" "dist/qry-${{ matrix.target }}"
+            cp "target/${{ matrix.target }}/release/${{ matrix.bin }}" "dist/quro-${{ matrix.target }}"
           fi
       - name: Upload as Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: qry-${{ matrix.target }}
+          name: quro-${{ matrix.target }}
           path: dist/*
       - name: Attach binary to release
         if: github.event_name == 'release'
