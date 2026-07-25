@@ -1,5 +1,7 @@
 use anyhow::{Result, anyhow};
-use postgres::{Client, NoTls, SimpleQueryMessage};
+use native_tls::TlsConnector;
+use postgres::{Client, SimpleQueryMessage};
+use postgres_native_tls::MakeTlsConnector;
 
 use crate::drivers::{Driver, QueryOutput};
 
@@ -9,8 +11,9 @@ pub struct PostgresDriver {
 
 impl PostgresDriver {
     pub fn new(dsn: &str) -> Result<Self> {
-        let client = Client::connect(dsn, NoTls)
-            .map_err(|e| anyhow!("failed to connect to database: {e}"))?;
+        let tls = MakeTlsConnector::new(TlsConnector::new()?);
+        let client =
+            Client::connect(dsn, tls).map_err(|e| anyhow!("failed to connect to database: {e}"))?;
         Ok(Self { client })
     }
 }
@@ -64,7 +67,7 @@ impl Driver for PostgresDriver {
                         .map(|column| column.name().to_owned())
                         .collect();
                 }
-                _ => todo!(),
+                _ => {}
             }
         }
 

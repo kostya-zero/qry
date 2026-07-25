@@ -1,6 +1,6 @@
-use std::process::exit;
+use std::{env, process::exit, str::FromStr};
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 
 use crate::{
     cli::Cli,
@@ -39,8 +39,33 @@ fn detect_driver(dsn: &str) -> Option<Drivers> {
 
 fn main() {
     let args = Cli::parse();
+    if args.list_drivers {
+        println!("postgres\nsqlite");
+        return;
+    }
 
-    let driver_to_use = if let Some(d) = detect_driver(&args.database_url) {
+    let mut cmd = Cli::command();
+
+    let database_url = if let Some(u) = args.database_url {
+        u
+    } else {
+        let database_url = env::var("DATABASE_URL");
+        if database_url.is_err() {
+            cmd.print_help().unwrap();
+            exit(1)
+        }
+        database_url.unwrap()
+    };
+
+    let driver_to_use = if let Some(d) = args.driver {
+        match Drivers::from_str(&d) {
+            Ok(dr) => dr,
+            Err(e) => {
+                print_error(&e.to_string());
+                exit(1)
+            }
+        }
+    } else if let Some(d) = detect_driver(&database_url) {
         d
     } else {
         print_error(
@@ -51,7 +76,7 @@ fn main() {
 
     match driver_to_use {
         Drivers::Sqlite => {
-            let driver = SqliteDriver::new(&args.database_url);
+            let driver = SqliteDriver::new(&database_url);
             match driver {
                 Ok(d) => {
                     let mut session = Session::new(d);
@@ -64,7 +89,7 @@ fn main() {
             }
         }
         Drivers::Postgres => {
-            let driver = PostgresDriver::new(&args.database_url);
+            let driver = PostgresDriver::new(&database_url);
             match driver {
                 Ok(d) => {
                     let mut session = Session::new(d);
