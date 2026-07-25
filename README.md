@@ -1,6 +1,6 @@
-# qry
+# Quro
 
-`qry` is a command-line interface (CLI) tool designed to provide an interactive query runner for various databases, including PostgreSQL and SQLite. It provides a REPL-like experience for executing SQL queries against connected databases.
+**Quro** is a command-line interface (CLI) tool designed to provide an interactive query runner for various databases, including PostgreSQL and SQLite. It provides a REPL-like experience for executing SQL queries against connected databases.
 
 ## Features
 
@@ -10,13 +10,13 @@
 
 ## Installation
 
-If you have Go toolchain installed you can use `go install`:
+If you have Rust toolchain installed, run this command:
 
 ```bash
-go install github.com/kostya-zero/qry@latest
+cargo install quro
 ```
 
-You can go to [https://github.com/kostya-zero/qry/releases](releases page) and download binary for your OS and architecture.
+You can go to [https://github.com/kostya-zero/quro/releases](releases) page and download binary for your OS and architecture.
 
 ## Usage
 
@@ -24,20 +24,20 @@ Run the tool by providing a DSN:
 
 ```bash
 # Provide a SQLite DSN
-./qry file:my_database.db
+quro file:my_database.db
 
 # Provide a PostgreSQL DSN
-./qry "postgres://user:password@localhost:5432/dbname"
+quro "postgres://user:password@localhost:5432/dbname"
 ```
 
 The driver is automatically detected from the DSN. You can also specify it explicitly or use an environment variable:
 
 ```bash
 # Using DATABASE_URL environment variable
-DATABASE_URL="postgres://user:password@localhost:5432/dbname" ./qry
+DATABASE_URL="postgres://user:password@localhost:5432/dbname" quro
 
 # Specifying driver explicitly
-./qry -d postgres "user=myuser password=mypass dbname=mydb"
+quro -d postgres "user=myuser password=mypass dbname=mydb"
 ```
 
 ### Options

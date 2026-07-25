@@ -98,9 +98,9 @@ where
 
                 let rows = vec![
                     vec![".help".to_string(), "prints help message".to_string()],
-                    vec![".version".to_string(), "prints version of qry".to_string()],
+                    vec![".version".to_string(), "prints version of quro".to_string()],
                     vec![".driver".to_string(), "prints driver name".to_string()],
-                    vec![".exit, .quit".to_string(), "exit qry".to_string()],
+                    vec![".exit, .quit".to_string(), "exit quro".to_string()],
                     vec![".db".to_string(), "prints all databases".to_string()],
                     vec![".tables".to_string(), "prints all tables".to_string()],
                     vec![
@@ -151,7 +151,7 @@ where
     pub fn run_repl(&mut self) -> Result<()> {
         let mut rl = DefaultEditor::new()?;
 
-        let welcome_header = format!("QRY v{} · {}", env!("CARGO_PKG_VERSION"), D::name());
+        let welcome_header = format!("Quro v{} · {}", env!("CARGO_PKG_VERSION"), D::name());
 
         println!("{}", welcome_header.blue().bold());
         println!("{}", "Use '.help' to see available commands.".dimmed());
@@ -160,9 +160,9 @@ where
             let mut prompt = String::new();
 
             if buf.is_empty() {
-                prompt.push_str("qry> ");
+                prompt.push_str("quro> ");
             } else {
-                prompt.push_str("...> ");
+                prompt.push_str("....> ");
             }
 
             let readline = rl.readline(&prompt);

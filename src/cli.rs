@@ -3,7 +3,7 @@ use clap::{ArgAction, Parser};
 /// A command-line query runner.
 #[derive(Parser)]
 #[command(
-    name = "qry",
+    name = "quro",
     about = env!("CARGO_PKG_DESCRIPTION"),
     version = env!("CARGO_PKG_VERSION"),
 

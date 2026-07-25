@@ -1,9 +1,9 @@
 [package]
-name = "qry"
+name = "quro"
 description = "A CLI query runner with support for multiple databases."
 authors = ["Konstantin Zhigaylo <zero@kostyazero.com>"]
-repository = "https://github.com/kostya-zero/qry"
-homepage = "https://github.com/kostya-zero/qry"
+repository = "https://github.com/kostya-zero/quro"
+homepage = "https://github.com/kostya-zero/quro"
 keywords = ["database", "cli", "sql"]
 readme = "README.md"
 license = "MIT"
