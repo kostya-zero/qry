@@ -50,11 +50,14 @@ jobs:
         uses: swatinem/rust-cache@v2
         with:
           key: ${{ matrix.target }}
-      - name: Install musl tools
-        if: contains(matrix.target, 'musl') && !contains(matrix.target, 'aarch64')
+      - name: Install OpenSSL development files
+        if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y musl-tools
+          sudo apt-get install -y libssl-dev
+      - name: Install musl tools
+        if: contains(matrix.target, 'musl') && !contains(matrix.target, 'aarch64')
+        run: sudo apt-get install -y musl-tools
       - name: Install cross
         if: runner.os == 'Linux' && contains(matrix.target, 'aarch64')
         uses: taiki-e/install-action@v2
