@@ -1,10 +1,10 @@
-use std::{env, process::exit, str::FromStr};
+use std::{env, process::exit};
 
 use clap::{CommandFactory, Parser};
 
 use crate::{
     cli::Cli,
-    drivers::{Drivers, postgres::PostgresDriver, sqlite::SqliteDriver},
+    drivers::{Driver, Drivers, postgres::PostgresDriver, sqlite::SqliteDriver},
     session::Session,
     terminal::print_error,
 };
@@ -15,8 +15,7 @@ mod session;
 mod terminal;
 
 fn detect_driver(dsn: &str) -> Option<Drivers> {
-    let lower_string = dsn.to_ascii_lowercase();
-    let lower = lower_string.as_str();
+    let lower = dsn.to_ascii_lowercase();
 
     if lower.starts_with("postgres://") || lower.starts_with("postgresql://") {
         return Some(Drivers::Postgres);
@@ -37,6 +36,16 @@ fn detect_driver(dsn: &str) -> Option<Drivers> {
     None
 }
 
+fn run_session<D: Driver>(driver: anyhow::Result<D>) {
+    match driver {
+        Ok(driver) => Session::new(driver).run_repl().unwrap(),
+        Err(error) => {
+            print_error(&format!("Failed to connect to the database: {error}"));
+            exit(1)
+        }
+    }
+}
+
 fn main() {
     let args = Cli::parse();
     if args.list_drivers {
@@ -44,24 +53,19 @@ fn main() {
         return;
     }
 
-    let mut cmd = Cli::command();
-
-    let database_url = if let Some(u) = args.database_url {
-        u
-    } else {
-        let database_url = env::var("DATABASE_URL");
-        if database_url.is_err() {
-            cmd.print_help().unwrap();
+    let database_url = match args.database_url.or_else(|| env::var("DATABASE_URL").ok()) {
+        Some(database_url) => database_url,
+        None => {
+            Cli::command().print_help().unwrap();
             exit(1)
         }
-        database_url.unwrap()
     };
 
     let driver_to_use = if let Some(d) = args.driver {
-        match Drivers::from_str(&d) {
+        match d.parse::<Drivers>() {
             Ok(dr) => dr,
             Err(e) => {
-                print_error(&e.to_string());
+                print_error(&e);
                 exit(1)
             }
         }
@@ -75,31 +79,7 @@ fn main() {
     };
 
     match driver_to_use {
-        Drivers::Sqlite => {
-            let driver = SqliteDriver::new(&database_url);
-            match driver {
-                Ok(d) => {
-                    let mut session = Session::new(d);
-                    session.run_repl().unwrap();
-                }
-                Err(e) => {
-                    print_error(&format!("Failed to connect to the database: {e}"));
-                    exit(1)
-                }
-            }
-        }
-        Drivers::Postgres => {
-            let driver = PostgresDriver::new(&database_url);
-            match driver {
-                Ok(d) => {
-                    let mut session = Session::new(d);
-                    session.run_repl().unwrap();
-                }
-                Err(e) => {
-                    print_error(&format!("Failed to connect to the database: {e}"));
-                    exit(1)
-                }
-            }
-        }
+        Drivers::Sqlite => run_session(SqliteDriver::new(&database_url)),
+        Drivers::Postgres => run_session(PostgresDriver::new(&database_url)),
     }
 }

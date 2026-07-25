@@ -29,7 +29,7 @@ pub enum Command {
     Exit,
 }
 
-#[derive(Debug, Error, PartialEq, Eq)]
+#[derive(Debug, Error)]
 pub enum SessionError {
     #[error("unknown command: {0}")]
     CommandNotFound(String),
@@ -67,9 +67,8 @@ where
     }
 
     fn execute_internal_command(&mut self, command: &str) -> Result<(), SessionError> {
-        let splitted: Vec<String> = command.splitn(2, " ").map(String::from).collect();
-
-        let cmd = Command::from_str(&splitted[0])
+        let mut parts = command.splitn(2, ' ');
+        let cmd = Command::from_str(parts.next().unwrap())
             .map_err(|_| SessionError::CommandNotFound(command.to_string()))?;
         match cmd {
             Command::Version => println!("{}", env!("CARGO_PKG_VERSION")),
@@ -78,20 +77,14 @@ where
             Command::Db => self.execute_query(D::get_databases_query()),
             Command::Driver => println!("{}", D::name()),
             Command::Schema => {
-                if splitted.len() < 2 {
-                    return Err(SessionError::CommandError(
-                        "table name is required".to_string(),
-                    ));
-                }
+                let table = parts
+                    .next()
+                    .filter(|table| !table.is_empty())
+                    .ok_or_else(|| {
+                        SessionError::CommandError("table name is required".to_string())
+                    })?;
 
-                let args = &splitted[1];
-                if args.is_empty() {
-                    return Err(SessionError::CommandError(
-                        "table name is required".to_string(),
-                    ));
-                }
-
-                let result = self.driver.get_tables_schema(args);
+                let result = self.driver.get_tables_schema(table);
                 self.display_query_result(result);
             }
             Command::Help => {
@@ -163,15 +156,8 @@ where
         println!("{}", "Use '.help' to see available commands.".dimmed());
         let mut buf = String::new();
         loop {
-            let mut prompt = String::new();
-
-            if buf.is_empty() {
-                prompt.push_str("quro> ");
-            } else {
-                prompt.push_str("....> ");
-            }
-
-            let readline = rl.readline(&prompt);
+            let prompt = if buf.is_empty() { "quro> " } else { "....> " };
+            let readline = rl.readline(prompt);
             match readline {
                 Ok(line) => {
                     rl.add_history_entry(line.as_str())?;
@@ -181,24 +167,21 @@ where
                         continue;
                     }
 
-                    if trimmed.starts_with(".") {
-                        let res = self.execute_internal_command(trimmed);
-                        if let Err(e) = res {
-                            if e == SessionError::Exit {
-                                break;
-                            } else {
-                                print_error(&format!("{e}"));
-                            }
+                    if trimmed.starts_with('.') {
+                        match self.execute_internal_command(trimmed) {
+                            Err(SessionError::Exit) => break,
+                            Err(error) => print_error(&error.to_string()),
+                            Ok(()) => {}
                         }
                         continue;
                     }
 
-                    if !trimmed.ends_with(";") {
-                        buf.push_str(&format!(" {}", trimmed));
+                    buf.push(' ');
+                    buf.push_str(trimmed);
+                    if !trimmed.ends_with(';') {
                         continue;
                     }
 
-                    buf.push_str(&format!(" {}", trimmed));
                     self.execute_query(&buf);
                     buf.clear();
                 }
