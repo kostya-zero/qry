@@ -6,11 +6,13 @@ use crate::{
     cli::Cli,
     drivers::{Drivers, postgres::PostgresDriver, sqlite::SqliteDriver},
     session::Session,
+    terminal::print_error,
 };
 
 mod cli;
 mod drivers;
 mod session;
+mod terminal;
 
 fn detect_driver(dsn: &str) -> Option<Drivers> {
     let lower_string = dsn.to_ascii_lowercase();
@@ -41,8 +43,8 @@ fn main() {
     let driver_to_use = if let Some(d) = detect_driver(&args.database_url) {
         d
     } else {
-        println!(
-            "Failed to auto-detect database driver. Please, specify the driver name explicitly with '--driver'."
+        print_error(
+            "Failed to auto-detect database driver. Please, specify the driver name explicitly with '--driver'.",
         );
         exit(1)
     };
@@ -56,7 +58,7 @@ fn main() {
                     session.run_repl().unwrap();
                 }
                 Err(e) => {
-                    println!("Failed to connect to the database: {e}");
+                    print_error(&format!("Failed to connect to the database: {e}"));
                     exit(1)
                 }
             }
@@ -69,7 +71,7 @@ fn main() {
                     session.run_repl().unwrap();
                 }
                 Err(e) => {
-                    println!("Failed to connect to the database: {e}");
+                    print_error(&format!("Failed to connect to the database: {e}"));
                     exit(1)
                 }
             }

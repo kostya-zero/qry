@@ -1,11 +1,18 @@
 use std::str::FromStr;
 
 use anyhow::Result;
+use colored::Colorize;
 use rustyline::{DefaultEditor, error::ReadlineError};
-use tabled::{builder::Builder, settings::Style};
+use tabled::{
+    builder::Builder,
+    settings::{Format, Modify, Style, object::Rows},
+};
 use thiserror::Error;
 
-use crate::drivers::{Driver, QueryOutput};
+use crate::{
+    drivers::{Driver, QueryOutput},
+    terminal::print_error,
+};
 
 pub struct Session<D> {
     driver: D,
@@ -122,7 +129,8 @@ where
         }
 
         let mut t = b.build();
-        t.with(Style::rounded());
+        t.with(Modify::new(Rows::first()).with(Format::content(|s| s.bold().to_string())));
+        t.with(Style::blank());
 
         println!("{t}");
     }
@@ -143,7 +151,10 @@ where
     pub fn run_repl(&mut self) -> Result<()> {
         let mut rl = DefaultEditor::new()?;
 
-        println!("QRY v{}", env!("CARGO_PKG_VERSION"));
+        let welcome_header = format!("QRY v{} · {}", env!("CARGO_PKG_VERSION"), D::name());
+
+        println!("{}", welcome_header.blue().bold());
+        println!("{}", "Use '.help' to see available commands.".dimmed());
         let mut buf = String::new();
         loop {
             let mut prompt = String::new();
@@ -170,7 +181,7 @@ where
                             if e == SessionError::Exit {
                                 break;
                             } else {
-                                eprintln!("{e}");
+                                print_error(&format!("{e}"));
                             }
                         }
                         continue;
@@ -196,7 +207,7 @@ where
                     break;
                 }
                 Err(err) => {
-                    println!("Error: {:?}", err);
+                    print_error(&format!("{err}"));
                     break;
                 }
             }
