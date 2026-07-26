@@ -16,7 +16,7 @@ If you have Rust toolchain installed, run this command:
 cargo install quro
 ```
 
-You can go to [GitHub Releases)(https://github.com/kostya-zero/quro/releases) page and download binary for your OS and architecture.
+You can go to [GitHub Releases](https://github.com/kostya-zero/quro/releases) page and download binary for your OS and architecture.
 
 ## Usage
 
