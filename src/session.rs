@@ -5,7 +5,6 @@ use colored::Colorize;
 use rustyline::{DefaultEditor, error::ReadlineError};
 use tabled::{
     builder::Builder,
-    grid::config::Border,
     settings::{
         Color, Format, Modify, Style,
         object::{Columns, Rows},
