@@ -5,7 +5,12 @@ use colored::Colorize;
 use rustyline::{DefaultEditor, error::ReadlineError};
 use tabled::{
     builder::Builder,
-    settings::{Format, Modify, Style, object::Rows},
+    grid::config::Border,
+    settings::{
+        Color, Format, Modify, Style,
+        object::{Columns, Rows},
+        style::BorderColor,
+    },
 };
 use thiserror::Error;
 
@@ -123,8 +128,20 @@ where
         }
 
         let mut t = b.build();
-        t.with(Modify::new(Rows::first()).with(Format::content(|s| s.bold().to_string())));
-        t.with(Style::blank());
+        t.with(
+            Modify::new(Rows::first())
+                .with(Format::content(|s| s.bold().to_string()))
+                .with(BorderColor::filled(Color::FG_BRIGHT_BLACK)),
+        );
+        t.with(Style::rounded())
+            .with(BorderColor::filled(Color::FG_BRIGHT_BLACK));
+        t.with(BorderColor::filled(Color::FG_BRIGHT_BLACK));
+
+        t.modify(Rows::new(1..), BorderColor::filled(Color::FG_BRIGHT_BLACK));
+        t.modify(
+            Columns::new(1..),
+            BorderColor::filled(Color::FG_BRIGHT_BLACK),
+        );
 
         println!("{t}");
     }
@@ -143,7 +160,8 @@ where
                     self.render_table(data);
                 }
             }
-            Err(error) => println!("database error: {error}"),
+            // TODO: Find a way to print error message without 'Caused By'.
+            Err(error) => print_error(&format!("database error: {error:?}")),
         }
     }
 

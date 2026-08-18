@@ -1,5 +1,6 @@
 use std::{env, process::exit};
 
+use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use crate::{
@@ -46,6 +47,15 @@ fn run_session<D: Driver>(driver: anyhow::Result<D>) {
     }
 }
 
+fn execute_query<D: Driver>(driver: Result<D>, query: &str) {
+    match driver {
+        Ok(driver) => Session::new(driver).execute_query(query),
+        Err(error) => {
+            print_error(&format!("Failed to connect to the database: {error}"));
+            exit(1)
+        }
+    }
+}
 fn main() {
     let args = Cli::parse();
     if args.list_drivers {
@@ -77,6 +87,14 @@ fn main() {
         );
         exit(1)
     };
+
+    if let Some(q) = args.query {
+        match driver_to_use {
+            Drivers::Sqlite => execute_query(SqliteDriver::new(&database_url), &q),
+            Drivers::Postgres => execute_query(PostgresDriver::new(&database_url), &q),
+        }
+        return;
+    }
 
     match driver_to_use {
         Drivers::Sqlite => run_session(SqliteDriver::new(&database_url)),

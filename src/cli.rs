@@ -17,6 +17,10 @@ pub struct Cli {
     #[arg(short, long)]
     pub driver: Option<String>,
 
+    /// Execute a specified query instead of launching REPL.
+    #[arg(short, long)]
+    pub query: Option<String>,
+
     /// Print a list of all supported drivers.
     #[arg(short, long, action = ArgAction::SetTrue)]
     pub list_drivers: bool,
